@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<title>Cursor Crew 테스트 페이지</title>
+<style>
+  body { font: 16px/1.6 system-ui, "Malgun Gothic", sans-serif; max-width: 760px; margin: 40px auto; padding: 0 20px; color: #222; }
+  .box { height: 600px; background: linear-gradient(#f4f1ff, #e9fbf5); border-radius: 16px; padding: 24px; margin: 24px 0; }
+  input { font: inherit; padding: 8px 10px; width: 100%; box-sizing: border-box; }
+  button { font: inherit; padding: 8px 14px; }
+</style>
+</head>
+<body>
+  <h1>Cursor Crew 테스트 페이지</h1>
+  <p>확장 없이 <code>content.js</code>를 돌려 보는 페이지입니다(chrome.* 는 <code>chrome-shim.js</code>가 흉내 냄). 마우스를 움직였다가 멈춰 보세요.</p>
+  <p><button id="pageBtn" onclick="this.textContent = '페이지 버튼 클릭됨 ' + (++window.n || (window.n = 1))">페이지 버튼</button></p>
+  <p><input placeholder="여기에 타이핑하면 커서들이 흐려져요" /></p>
+  <div class="box">긴 영역 (스크롤 테스트)</div>
+  <div class="box">더 긴 영역</div>
+
+  <script src="chrome-shim.js"></script>
+  <script src="../defaults.js"></script>
+  <script src="../content.js"></script>
+</body>
+</html>

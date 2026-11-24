@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<title>Cursor Crew 설정</title>
+<link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Cursor Crew</h1>
+      <span id="saved" aria-live="polite"></span>
+    </header>
+
+    <section>
+      <label class="switch"><input type="checkbox" id="enabled" /> <span>커서 크루 켜기</span></label>
+      <p class="help">툴바 아이콘 클릭이나 <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd>로도 켜고 끌 수 있어요. <a href="#" id="shortcuts">단축키 바꾸기</a></p>
+    </section>
+
+    <section>
+      <h2>커서들</h2>
+      <p class="help">마우스를 잠깐 멈추면 커서들이 제자리에 서요. 그때 원하는 커서로 가서 클릭하세요. 링크는 <kbd>Shift</kbd>+클릭이면 지금 탭에서, <kbd>Ctrl</kbd>+클릭이면 뒤쪽 탭으로 열려요.</p>
+      <div id="crew"></div>
+      <button id="add" class="ghost">+ 커서 추가</button>
+    </section>
+
+    <section>
+      <h2>움직임</h2>
+      <label class="row">멈춘 뒤 잡히기까지 <input type="range" id="settleMs" min="200" max="1200" step="50" /> <output id="settleOut"></output></label>
+    </section>
+
+    <section>
+      <h2>끌 사이트</h2>
+      <p class="help">한 줄에 하나씩, 도메인만 적어요(예: <code>docs.google.com</code>). 하위 도메인도 함께 꺼져요.</p>
+      <textarea id="excluded" rows="4" placeholder="figma.com"></textarea>
+    </section>
+
+    <section id="memos">
+      <h2>메모</h2>
+      <div id="memoList"></div>
+    </section>
+  </main>
+
+  <template id="rowTpl">
+    <div class="member">
+      <input type="color" class="color" aria-label="색" />
+      <input type="text" class="name" maxlength="16" placeholder="이름" aria-label="이름" />
+      <select class="action" aria-label="기능"></select>
+      <input type="text" class="url" placeholder="https://…" aria-label="링크 주소" />
+      <div class="tools">
+        <button class="up" title="위로">↑</button>
+        <button class="down" title="아래로">↓</button>
+        <button class="del" title="삭제">✕</button>
+      </div>
+    </div>
+  </template>
+
+  <!-- 확장 안에서는 아무 일도 하지 않음. 일반 페이지로 열어 미리볼 때만 chrome.* 를 흉내 낸다 -->
+  <script src="test/chrome-shim.js"></script>
+  <script src="defaults.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
