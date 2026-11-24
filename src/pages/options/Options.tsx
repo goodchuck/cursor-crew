@@ -1,6 +1,6 @@
 // 설정 창. 툴바 아이콘을 누르면 별도 창(540×720)으로 열린다. 바꾸면 바로 저장되고 열린 탭의 펫에도 반영된다.
 import { useEffect, useState } from "react";
-import { HINT_SEEN_KEY, reorderImages, saveImage, type LangPref, type MenuItem, type MenuKey, type Settings, type ThemePref } from "@src/shared/settings";
+import { CUSTOM_IMAGES, HINT_SEEN_KEY, reorderImages, saveImage, type LangPref, type MenuItem, type MenuKey, type Settings, type ThemePref } from "@src/shared/settings";
 import { resolveLang, type MsgKey } from "@src/shared/i18n";
 import { getSkin } from "@src/shared/skins";
 import { itemName } from "@src/pages/content/actions";
@@ -131,7 +131,8 @@ export default function Options() {
           pixelated={s.imagePixelated}
           t={t}
         />
-        <ImageSlots names={names} images={images} pixelated={s.imagePixelated} active={s.skin === "image"} msg={imgMsg} onFile={onFile} onClear={onClear} onPixelated={(imagePixelated) => update({ imagePixelated })} t={t} />
+        {/* 내 이미지·GIF 올리기: CUSTOM_IMAGES 가 꺼져 있으면 숨김(코드는 유지) */}
+        {CUSTOM_IMAGES && <ImageSlots names={names} images={images} pixelated={s.imagePixelated} active={s.skin === "image"} msg={imgMsg} onFile={onFile} onClear={onClear} onPixelated={(imagePixelated) => update({ imagePixelated })} t={t} />}
         <div className="grid gap-2.5">
           <Range label={t("opt.size")} value={s.size} min={24} max={64} step={2} onChange={(size) => update({ size })} display={s.size + "px"} />
           <Range label={t("opt.opacity")} value={s.opacity} min={0.3} max={1} step={0.05} onChange={(opacity) => update({ opacity })} display={Math.round(s.opacity * 100) + "%"} />

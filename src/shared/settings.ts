@@ -72,6 +72,13 @@ export const COLORS = ["#5AB8F0", "#F2766B", "#5BD16A", "#B48CF2", "#F2B84B", "#
 export const MAX_CREW = 3; // 화면을 덜 가리도록 3마리까지
 export const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 
+/**
+ * 내 이미지·GIF 스킨(펫마다 그림 올리기) 켜기/끄기.
+ * 지금은 꺼 둔다: 저장 공간 관리가 복잡해져서 첫 출시에서는 뺐다. 코드는 그대로 남아 있어서 true 로 바꾸면 다시 살아난다.
+ * 다시 켤 때는 manifest.config.ts 의 unlimitedStorage 권한, README·store 문서의 GIF 설명도 함께 되살린다.
+ */
+export const CUSTOM_IMAGES = false;
+
 /** 펫마다 올린 이미지(chrome.storage.local, 펫 순서와 같은 번호). skinImage 는 v0.4 이전 키 */
 export const IMAGE_KEYS = Array.from({ length: MAX_CREW }, (_, i) => "skinImage" + i);
 const LEGACY_IMAGE_KEY = "skinImage";
@@ -83,6 +90,8 @@ export async function loadSettings(): Promise<Settings> {
   if (!MENU_KEYS.includes(s.menuKey)) s.menuKey = DEFAULTS.menuKey;
   // 예전(최대 6마리)에 더 많이 저장해 둔 경우 설정 창에서도 3마리까지만 보이게
   if (Array.isArray(s.crew) && s.crew.length > MAX_CREW) s.crew = s.crew.slice(0, MAX_CREW);
+  // 내 이미지 스킨을 꺼 둔 동안은 예전에 골라 둔 사람도 슬라임으로(올려 둔 그림은 지우지 않음)
+  if (!CUSTOM_IMAGES && s.skin === "image") s.skin = DEFAULTS.skin;
   return s;
 }
 

@@ -8,8 +8,8 @@ export default defineManifest({
   description: "__MSG_extDescription__",
   default_locale: "en",
   version: pkg.version,
-  // unlimitedStorage: 큰 GIF 를 여러 장 넣어도 저장 한도에 걸리지 않게(설치 때 경고 없음)
-  permissions: ["storage", "unlimitedStorage"],
+  // 내 이미지·GIF 기능(CUSTOM_IMAGES)을 다시 켜면 "unlimitedStorage" 도 다시 넣는다(큰 GIF 여러 장 저장용)
+  permissions: ["storage"],
   background: { service_worker: "src/pages/background/index.ts", type: "module" },
   content_scripts: [
     {

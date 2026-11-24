@@ -12,7 +12,6 @@ Cursor Crew(이하 "확장")는 사용자의 개인정보를 수집하거나 외
 | --- | --- | --- |
 | 설정(켜기/끄기, 펫 개수·크기·색·스킨, 메뉴 키, 언어, 테마, 펫별 링크 주소와 이름) | `chrome.storage.sync` | 설정 유지. 크롬 동기화를 켠 경우 사용자의 다른 크롬 기기와 Google 계정을 통해 동기화됩니다. 이 동기화는 크롬이 처리하며, 개발자는 이 데이터에 접근할 수 없습니다. |
 | 페이지 메모(메모 내용, 그 페이지의 주소와 제목, 수정 시각) | `chrome.storage.local` | 사용자가 직접 쓴 메모를 그 페이지에서 다시 보여 주기 위해 |
-| 사용자가 올린 펫 이미지(GIF·PNG 등) | `chrome.storage.local` | 펫 모양으로 표시하기 위해 |
 | 첫 안내를 봤는지 여부 | `chrome.storage.local` | 안내를 한 번만 보여 주기 위해 |
 
 **하지 않는 것**
@@ -23,7 +22,7 @@ Cursor Crew(이하 "확장")는 사용자의 개인정보를 수집하거나 외
 
 **클립보드:** "URL 복사" 기능을 사용자가 실행했을 때만 현재 페이지 주소를 클립보드에 씁니다. 클립보드를 읽지는 않습니다.
 
-**삭제:** 설정 창에서 메모와 이미지를 지울 수 있습니다. 확장을 삭제하면 저장된 모든 데이터가 함께 삭제됩니다.
+**삭제:** 설정 창에서 메모를 지울 수 있습니다. 확장을 삭제하면 저장된 모든 데이터가 함께 삭제됩니다.
 
 **문의:** <!-- TODO(사용자): 연락처 이메일 또는 GitHub 이슈 주소 -->
 
@@ -37,7 +36,6 @@ Cursor Crew ("the extension") does not collect or transmit any personal data.
 | --- | --- | --- |
 | Settings (on/off, pet count, size, colors and skin, menu key, language, theme, each pet's link URL and name) | `chrome.storage.sync` | To keep your settings. If Chrome Sync is on, Chrome syncs them across your Chrome devices through your Google account. Chrome handles this sync, and the developer has no access to the data. |
 | Page memos (memo text, that page's URL and title, last edit time) | `chrome.storage.local` | To show the memo you wrote on that page again |
-| Pet images you upload (GIF, PNG, etc.) | `chrome.storage.local` | To display them as your pets |
 | Whether you've seen the first-run hint | `chrome.storage.local` | To show the hint only once |
 
 **What it does not do**
@@ -48,6 +46,6 @@ Cursor Crew ("the extension") does not collect or transmit any personal data.
 
 **Clipboard:** It writes the current page URL to the clipboard only when you run "Copy URL". It never reads the clipboard.
 
-**Deletion:** You can delete memos and images in the settings window. Removing the extension deletes all of its stored data.
+**Deletion:** You can delete memos in the settings window. Removing the extension deletes all of its stored data.
 
 **Contact:** <!-- TODO(owner): contact email or GitHub issues URL -->

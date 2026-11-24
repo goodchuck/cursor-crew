@@ -34,7 +34,7 @@
 
 ■ 내 마음대로 꾸미기
 • 펫 최대 3마리(펫 하나에 기능 하나), 크기, 투명도, 색
-• 모양: 도트 슬라임, 커서, 또는 내 GIF·이미지 (펫마다 다르게, 끌어다 놓기)
+• 모양: 도트 슬라임 또는 커서
 • 메뉴 키: Alt / Ctrl / Shift / Alt+Shift
 • 다크 모드, 한국어 / English
 
@@ -62,7 +62,7 @@ Each pet holds one shortcut: hold Alt and click a pet to run it.
 
 ■ Make them yours
 • Up to 3 pets (one shortcut each), size, opacity, colors
-• Look: pixel slime, cursor, or your own GIF or image (one per pet, drag and drop)
+• Look: pixel slime or cursor
 • Menu key: Alt / Ctrl / Shift / Alt+Shift
 • Dark mode, Korean / English
 
@@ -111,10 +111,9 @@ Shows small pixel pets that follow the mouse cursor and act as user-configured s
 Saves the user's settings (pet count, size, colors, skin, menu key, language, theme and each pet's link) and the page memos the user writes. Nothing is sent off the device.
 ```
 
-**unlimitedStorage**
-```
+<!-- unlimitedStorage: 내 이미지·GIF 기능(CUSTOM_IMAGES)을 다시 켤 때 권한과 함께 되살린다.
 Users can upload their own animated GIFs as pet images (one per pet). These are stored locally as data URLs and can exceed the default 10 MB chrome.storage.local quota.
-```
+-->
 
 **호스트 권한 (content script on `http://*/*`, `https://*/*`, `file:///*`)**
 ```

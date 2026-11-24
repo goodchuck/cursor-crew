@@ -1,7 +1,7 @@
 // 스킨 카드(움직이는 미리보기 포함)
 import { useEffect, useRef } from "react";
 import { SKINS, SKIN_IDS } from "@src/shared/skins";
-import type { SkinId } from "@src/shared/settings";
+import { CUSTOM_IMAGES, type SkinId } from "@src/shared/settings";
 import type { T } from "@src/shared/i18n";
 
 function Preview({ id, color, image, pixelated }: { id: SkinId; color: string; image: string | null; pixelated: boolean }) {
@@ -35,8 +35,9 @@ function Preview({ id, color, image, pixelated }: { id: SkinId; color: string; i
 
 export function SkinPicker({ value, onChange, color, image, pixelated, t }: { value: SkinId; onChange: (id: SkinId) => void; color: string; image: string | null; pixelated: boolean; t: T }) {
   return (
-    <div role="radiogroup" aria-label={t("opt.look")} className="mb-3 grid grid-cols-3 gap-2">
-      {SKIN_IDS.map((id) => {
+    <div role="radiogroup" aria-label={t("opt.look")} className={`mb-3 grid gap-2 ${CUSTOM_IMAGES ? "grid-cols-3" : "grid-cols-2"}`}>
+      {/* 내 이미지 스킨은 CUSTOM_IMAGES 가 꺼져 있으면 숨긴다 */}
+      {SKIN_IDS.filter((id) => CUSTOM_IMAGES || !SKINS[id].needsImage).map((id) => {
         const skin = SKINS[id];
         const on = value === id;
         return (
