@@ -98,7 +98,6 @@ $("#add").addEventListener("click", () => {
 
 // ------------------------------------------------------------ 모양(스킨)
 const Skins = globalThis.CrewSkins;
-let skinImage = null;
 let previews = [];
 
 function renderSkins() {
@@ -116,23 +115,24 @@ function renderSkins() {
     const holder = document.createElement("div");
     holder.style.cssText = "position:absolute;left:50px;top:58px";
     const color = (state.petColors && state.petColors[0]) || D.settings.petColors[0];
-    const body = skin.create(color, 40, { image: skinImage });
+    const body = skin.create(color, 40, { image: images.find(Boolean), pixelated: state.imagePixelated });
     holder.appendChild(body.el);
     stage.appendChild(holder);
     const label = document.createElement("span");
-    label.textContent = skin.label + (skin.needsImage && !skinImage ? " (이미지 필요)" : "");
+    label.textContent = skin.label + (skin.needsImage && !images.some(Boolean) ? " (아래에 올리기)" : "");
     card.append(stage, label);
     const pick = () => {
       state.skin = id;
       renderSkins();
+      renderTiles();
       save();
+      if (skin.needsImage && !images.some(Boolean)) showMsg("아래 칸에 이미지나 GIF를 올려 주세요.");
     };
     card.addEventListener("click", pick);
     card.addEventListener("keydown", (e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), pick()));
     box.appendChild(card);
     previews.push(body);
   }
-  $("#imageRow").hidden = !Skins.get(state.skin).needsImage;
 }
 
 // 미리보기: 2초 걷기(통통) ↔ 2초 쉬기
@@ -176,34 +176,163 @@ function bindRange(id, fmt, onChange) {
   });
 }
 
-// 올린 이미지는 128px 안으로 줄여 PNG 로 chrome.storage.local 에 저장
-$("#imageFile").addEventListener("change", async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const url = await new Promise((res, rej) => {
+// ------------------------------------------------------------ 내 이미지·GIF (펫마다 한 장)
+// 움직이는 이미지(GIF·움직이는 WebP·APNG)는 원본 그대로 저장해야 움직임이 남는다.
+// 정지 이미지는 128px보다 크면 줄여서 PNG 로 저장한다. chrome.storage.local 키: skinImage0~2
+const MAX_BYTES = 2 * 1024 * 1024;
+let images = [null, null, null];
+
+function findAscii(bytes, text, limit) {
+  const t = [...text].map((c) => c.charCodeAt(0));
+  const end = Math.min(bytes.length, limit || bytes.length) - t.length;
+  outer: for (let i = 0; i <= end; i++) {
+    for (let j = 0; j < t.length; j++) if (bytes[i + j] !== t[j]) continue outer;
+    return i;
+  }
+  return -1;
+}
+
+function isAnimated(type, bytes) {
+  if (type === "image/gif") return true; // GIF 는 늘 원본 그대로(정지 GIF 도 손해 없음)
+  if (type === "image/webp") return findAscii(bytes, "ANIM", 4096) >= 0;
+  if (type === "image/png" || type === "image/apng") {
+    const idat = findAscii(bytes, "IDAT");
+    return findAscii(bytes, "acTL", idat > 0 ? idat : undefined) >= 0;
+  }
+  return false;
+}
+
+const readAs = (file, how) =>
+  new Promise((res, rej) => {
     const r = new FileReader();
     r.onload = () => res(r.result);
-    r.onerror = rej;
-    r.readAsDataURL(file);
+    r.onerror = () => rej(r.error);
+    r[how](file);
   });
-  const img = new Image();
-  await new Promise((res, rej) => {
-    img.onload = res;
-    img.onerror = rej;
+
+function loadImg(url) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => res(img);
+    img.onerror = () => rej(new Error("이미지를 읽을 수 없어요"));
     img.src = url;
   });
-  const k = Math.min(1, 128 / Math.max(img.width, img.height));
-  const cv = document.createElement("canvas");
-  cv.width = Math.max(1, Math.round(img.width * k));
-  cv.height = Math.max(1, Math.round(img.height * k));
-  const cx = cv.getContext("2d");
-  cx.imageSmoothingEnabled = k < 1;
-  cx.drawImage(img, 0, 0, cv.width, cv.height);
-  skinImage = cv.toDataURL("image/png");
-  await chrome.storage.local.set({ skinImage });
-  $("#imageNote").textContent = `저장됨 (${cv.width}×${cv.height})`;
+}
+
+function showMsg(text, kind) {
+  const el = $("#imageMsg");
+  el.textContent = text;
+  el.className = "msg " + (kind || "");
+}
+
+async function setImage(i, file) {
+  if (!file) return;
+  if (!/^image\//.test(file.type)) return showMsg("이미지 파일만 쓸 수 있어요 (GIF·PNG·JPG·WebP).", "err");
+  if (file.size > MAX_BYTES) {
+    return showMsg(`파일이 ${(file.size / 1048576).toFixed(1)}MB예요. 2MB 이하로 줄여서 올려 주세요. GIF는 가로세로나 프레임 수를 줄이면 많이 작아져요.`, "err");
+  }
+  try {
+    const bytes = new Uint8Array(await readAs(file, "readAsArrayBuffer"));
+    let url = await readAs(file, "readAsDataURL");
+    const img = await loadImg(url);
+    const animated = isAnimated(file.type, bytes);
+    if (!animated && Math.max(img.width, img.height) > 128) {
+      const k = 128 / Math.max(img.width, img.height);
+      const cv = document.createElement("canvas");
+      cv.width = Math.max(1, Math.round(img.width * k));
+      cv.height = Math.max(1, Math.round(img.height * k));
+      cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+      url = cv.toDataURL("image/png");
+    }
+    // 작은 그림(64px 이하)은 대개 도트라서 선명하게 켜 준다
+    if (Math.max(img.width, img.height) <= 64 && !state.imagePixelated) {
+      state.imagePixelated = true;
+      $("#imagePixelated").checked = true;
+    }
+    images[i] = url;
+    await chrome.storage.local.set({ ["skinImage" + i]: url });
+    await chrome.storage.local.remove("skinImage"); // 예전 버전의 키
+    state.skin = "image"; // 이미지를 올리면 바로 그 모양으로
+    save();
+    showMsg(`펫 ${i + 1} 이미지를 바꿨어요 (${img.width}×${img.height}${animated ? ", 움직이는 이미지" : ""}).`, "ok");
+  } catch (err) {
+    showMsg("이미지를 읽지 못했어요: " + err.message, "err");
+  }
+  renderTiles();
   renderSkins();
-  flashSaved();
+}
+
+async function clearImage(i) {
+  images[i] = null;
+  await chrome.storage.local.remove("skinImage" + i);
+  if (!images.some(Boolean) && state.skin === "image") {
+    state.skin = "slime";
+    save();
+  }
+  showMsg(`펫 ${i + 1} 이미지를 지웠어요.`);
+  renderTiles();
+  renderSkins();
+}
+
+function renderTiles() {
+  const box = $("#imageTiles");
+  box.innerHTML = "";
+  $("#imageBox").classList.toggle("on", state.skin === "image");
+  for (let i = 0; i < state.pets; i++) {
+    const tile = document.createElement("div");
+    tile.className = "tile";
+    tile.tabIndex = 0;
+    tile.setAttribute("role", "button");
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.addEventListener("change", () => setImage(i, input.files[0]));
+    tile.appendChild(input);
+    if (images[i]) {
+      const img = document.createElement("img");
+      img.src = images[i];
+      img.alt = `펫 ${i + 1} 이미지`;
+      if (state.imagePixelated) img.className = "px";
+      const x = document.createElement("button");
+      x.className = "x";
+      x.textContent = "✕";
+      x.title = "이 이미지 지우기";
+      x.addEventListener("click", (e) => {
+        e.stopPropagation();
+        clearImage(i);
+      });
+      tile.append(img, document.createTextNode(`펫 ${i + 1}`), x);
+      tile.setAttribute("aria-label", `펫 ${i + 1} 이미지 바꾸기`);
+    } else {
+      const plus = document.createElement("span");
+      plus.className = "plus";
+      plus.textContent = "+";
+      const note = i > 0 && images[0] ? "비우면 펫 1 그림" : "끌어다 놓기";
+      tile.append(plus, document.createTextNode(`펫 ${i + 1}`), document.createElement("br"), document.createTextNode(note));
+      tile.setAttribute("aria-label", `펫 ${i + 1} 이미지 고르기`);
+    }
+    tile.addEventListener("click", () => input.click());
+    tile.addEventListener("keydown", (e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), input.click()));
+    tile.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      tile.classList.add("drag");
+    });
+    tile.addEventListener("dragleave", () => tile.classList.remove("drag"));
+    tile.addEventListener("drop", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      tile.classList.remove("drag");
+      setImage(i, e.dataTransfer.files[0]);
+    });
+    box.appendChild(tile);
+  }
+}
+
+// 칸 밖에 떨어뜨려도 브라우저가 파일을 열어 버리지 않게(펫 1 칸으로 받는다)
+addEventListener("dragover", (e) => e.preventDefault());
+addEventListener("drop", (e) => {
+  e.preventDefault();
+  if (e.dataTransfer.files[0]) setImage(0, e.dataTransfer.files[0]);
 });
 
 // ------------------------------------------------------------ 메모 목록
@@ -252,10 +381,19 @@ async function renderMemos() {
   $("#menuKey").value = state.menuKey;
   $("#excluded").value = (state.excluded || []).join("\n");
   state.petColors = [...(state.petColors || D.settings.petColors)];
-  skinImage = (await chrome.storage.local.get("skinImage")).skinImage || null;
+  const got = await chrome.storage.local.get(["skinImage0", "skinImage1", "skinImage2", "skinImage"]);
+  images = [got.skinImage0 || got.skinImage || null, got.skinImage1 || null, got.skinImage2 || null];
+  $("#imagePixelated").checked = !!state.imagePixelated;
+  $("#imagePixelated").addEventListener("change", (e) => {
+    state.imagePixelated = e.target.checked;
+    renderTiles();
+    renderSkins();
+    save();
+  });
+  renderTiles();
   renderSkins();
   renderPetColors();
-  bindRange("pets", (v) => v + "마리", renderPetColors);
+  bindRange("pets", (v) => v + "마리", () => (renderPetColors(), renderTiles()));
   bindRange("size", (v) => v + "px");
   bindRange("opacity", (v) => Math.round(v * 100) + "%");
   requestAnimationFrame(animatePreviews);

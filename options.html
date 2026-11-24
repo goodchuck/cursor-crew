@@ -23,9 +23,14 @@
       <h2>모양</h2>
       <p class="help">마우스 옆을 따라다니는 펫의 겉모습이에요. 기능은 모양과 상관없이 같아요.</p>
       <div id="skins" class="skins" role="radiogroup" aria-label="스킨"></div>
-      <div id="imageRow" class="row" hidden>
-        <label class="file">이미지 고르기 <input type="file" id="imageFile" accept="image/*" /></label>
-        <span class="help" id="imageNote">PNG·GIF·JPG. 128px로 줄여서 저장해요.</span>
+      <div id="imageBox" class="imagebox">
+        <div class="imgHead">
+          <b>내 이미지·GIF로 바꾸기</b>
+          <span class="help">칸에 파일을 끌어다 놓거나 클릭해서 골라요. 움직이는 GIF·WebP·PNG도 그대로 움직여요. 한 장 2MB까지.</span>
+        </div>
+        <div id="imageTiles" class="tiles"></div>
+        <label class="check"><input type="checkbox" id="imagePixelated" /> 도트(픽셀아트) 선명하게: 작은 도트 그림이 흐려지지 않게</label>
+        <p id="imageMsg" class="msg" role="status" aria-live="polite"></p>
       </div>
       <div class="grid2">
         <label class="row">개수 <input type="range" id="pets" min="1" max="3" step="1" /> <output id="petsOut"></output></label>

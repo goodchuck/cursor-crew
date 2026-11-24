@@ -12,6 +12,7 @@ globalThis.CrewDefaults = {
     size: 36, // 펫 크기(px)
     opacity: 0.9, // 평소 투명도(메뉴가 열리면 1)
     petColors: ["#5BD16A", "#5AB8F0", "#F28AC0"],
+    imagePixelated: false, // 내 이미지 스킨: 도트 그림을 흐리지 않고 또렷하게(image-rendering: pixelated)
 
     // 메뉴 키를 누르고 있거나 펫을 클릭하면 원형으로 펼쳐지는 기능 메뉴
     crew: [

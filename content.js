@@ -137,7 +137,7 @@
 
   // ---------------------------------------------------------------- Crew
   class Crew {
-    constructor(cfg, mouse, image) {
+    constructor(cfg, mouse, images) {
       this.cfg = cfg;
       this.size = clamp(+cfg.size || 36, 20, 72);
       this.key = KEY_LABEL[cfg.menuKey] ? cfg.menuKey : null; // null = 키로 열기 끔
@@ -160,10 +160,12 @@
       if (!this.visible) this.root.classList.add("hide");
 
       let skin = Skins.get(cfg.skin);
-      if (skin.needsImage && !image) skin = Skins.get("slime");
+      if (skin.needsImage && !(images && images.some(Boolean))) skin = Skins.get("slime");
       const n = clamp(Math.round(cfg.pets) || 1, 1, D.maxPets);
       const colors = cfg.petColors && cfg.petColors.length ? cfg.petColors : D.settings.petColors;
-      this.pets = Array.from({ length: n }, (_, i) => this.makePet(skin, colors[i % colors.length], i, image));
+      // 펫마다 자기 이미지, 비어 있으면 첫 번째로 올린 이미지를 같이 쓴다
+      const imageFor = (i) => (images ? images[i] || images.find(Boolean) : null);
+      this.pets = Array.from({ length: n }, (_, i) => this.makePet(skin, colors[i % colors.length], i, imageFor(i)));
       document.documentElement.appendChild(this.host);
       this.refreshMemo();
 
@@ -195,7 +197,7 @@
 
     makePet(skin, color, i, image) {
       const s = this.size;
-      const body = skin.create(color, s, { image });
+      const body = skin.create(color, s, { image, pixelated: !!this.cfg.imagePixelated });
       const hit = h("div", { class: "hit", title: this.key ? `클릭하거나 ${KEY_LABEL[this.key]}를 누르고 있으면 메뉴` : "클릭하면 메뉴" });
       Object.assign(hit.style, { left: -s * 0.55 + "px", top: -s * 1.05 + "px", width: s * 1.1 + "px", height: s * 1.1 + "px" });
       const spark = h("div", { class: "spark", text: "✦" });
@@ -522,16 +524,15 @@
         const c = tg.hold ? 18 : 2 * Math.sqrt(k) * 0.8; // 잡힐 땐 브레이크만
         let ax = (tg.x - pet.x) * k - pet.vx * c;
         let ay = (tg.y - pet.y) * k - pet.vy * c;
-        if (!tg.hold) {
-          for (const o of this.pets) {
-            if (o === pet) continue;
-            const dx = pet.x - o.x;
-            const dy = pet.y - o.y;
-            const d = Math.hypot(dx, dy) || 1;
-            if (d < s * 0.85) {
-              ax += (dx / d) * (s * 0.85 - d) * 50;
-              ay += (dy / d) * (s * 0.85 - d) * 50;
-            }
+        // 서로 겹치지 않게 밀어낸다(멈춰 있는 펫끼리도)
+        for (const o of this.pets) {
+          if (o === pet) continue;
+          const dx = pet.x - o.x;
+          const dy = pet.y - o.y;
+          const d = Math.hypot(dx, dy) || 1;
+          if (d < s * 0.85) {
+            ax += (dx / d) * (s * 0.85 - d) * 50;
+            ay += (dy / d) * (s * 0.85 - d) * 50;
           }
         }
         pet.vx += ax * dt;
@@ -652,21 +653,24 @@
   async function apply() {
     const cfg = await store.sync.get(D.settings);
     const on = cfg.enabled && !excluded(cfg.excluded);
-    let image = null;
-    if (on && Skins.get(cfg.skin).needsImage) image = (await store.local.get("skinImage")).skinImage || null;
+    let images = null;
+    if (on && Skins.get(cfg.skin).needsImage) {
+      const got = await store.local.get(["skinImage0", "skinImage1", "skinImage2", "skinImage"]);
+      images = [got.skinImage0 || got.skinImage || null, got.skinImage1 || null, got.skinImage2 || null];
+    }
     if (crew) {
       lastMouse = crew.mouse || lastMouse;
       crew.destroy();
       crew = null;
     }
     if (on) {
-      crew = new Crew(cfg, lastMouse, image);
+      crew = new Crew(cfg, lastMouse, images);
       if (lastMouse) crew.maybeHint();
     }
   }
 
   store.onChanged.addListener((changes, area) => {
-    if (area === "sync" || (area === "local" && changes.skinImage)) apply();
+    if (area === "sync" || (area === "local" && Object.keys(changes).some((k) => k.startsWith("skinImage")))) apply();
     else if (area === "local" && crew && changes[memoKey()]) crew.refreshMemo();
   });
   apply();

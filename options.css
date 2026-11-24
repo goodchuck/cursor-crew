@@ -63,3 +63,23 @@ textarea { resize: vertical; }
 output { min-width: 3.5em; color: #555; font-variant-numeric: tabular-nums; }
 @media (max-width: 600px) { .grid2 { grid-template-columns: 1fr; } }
 [hidden] { display: none !important; }
+
+/* 내 이미지·GIF */
+.imagebox { border: 1.5px dashed #c9c9d2; border-radius: 12px; padding: 12px; margin-bottom: 14px; background: #fbfbfd; }
+.imagebox.on { border-style: solid; border-color: #0D99FF; background: #F5FAFF; }
+.imgHead { display: flex; flex-direction: column; gap: 2px; margin-bottom: 10px; }
+.imgHead .help { margin: 0; }
+.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.tile { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 104px; border: 2px dashed #d4d4dc; border-radius: 10px; background: #fff; cursor: pointer; color: #8a8a90; font-size: 12px; text-align: center; padding: 6px; }
+.tile:hover, .tile:focus-visible { border-color: #0D99FF; color: #0D99FF; outline: 0; }
+.tile.drag { border-color: #0D99FF; background: #EAF5FF; }
+.tile img { width: 56px; height: 56px; object-fit: contain; }
+.tile img.px { image-rendering: pixelated; }
+.tile .plus { font-size: 26px; line-height: 1; }
+.tile .x { position: absolute; top: 4px; right: 4px; padding: 0 6px; font-size: 12px; background: #f0f0f2; color: #666; border-radius: 6px; }
+.tile .x:hover { background: #F24822; color: #fff; }
+.tile input { display: none; }
+.check { display: flex; align-items: center; gap: 6px; margin-top: 10px; font-size: 13px; cursor: pointer; }
+.msg { margin: 8px 0 0; font-size: 13px; min-height: 1em; }
+.msg.err { color: #D0341B; }
+.msg.ok { color: #14AE5C; }

@@ -171,12 +171,13 @@ globalThis.CrewSkins = (() => {
 
   // ------------------------------------------------------------ 내 이미지(옵션에서 올린 그림)
   const image = {
-    label: "내 이미지",
+    label: "내 이미지·GIF",
     needsImage: true,
     create(color, size, opts) {
       const img = pixelImg(size);
-      img.style.objectFit = "contain";
-      img.style.imageRendering = "auto";
+      img.style.objectFit = "contain"; // 크기 상자 안에 비율 유지
+      img.style.objectPosition = "50% 100%"; // 발밑을 기준점에 맞춤
+      img.style.imageRendering = opts && opts.pixelated ? "pixelated" : "auto";
       img.src = (opts && opts.image) || slimeFrame(color, "rest", 0, false);
       let phase = 0;
       let tilt = 0;
