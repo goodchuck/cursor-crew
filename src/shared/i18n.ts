@@ -23,15 +23,13 @@ const ko = {
   "toast.top": "↑ 맨 위로",
 
   // 펫·원형 메뉴
-  "pet.titleKey": "클릭하거나 {key}를 누르고 있으면 메뉴",
-  "pet.titleClick": "클릭하면 메뉴",
+  "pet.title": "클릭하면 메뉴가 펫 옆에 고정돼요",
   "radial.pickKey": "방향을 고르고 {key}를 떼세요",
   "radial.pickClick": "고르세요 · Esc 닫기",
   "radial.memoOpen": "메모 있음 · 열기",
   "memo.exists": "이 페이지에 메모가 있어요",
   "hint.key1": "{key}를 누르고 있으면 메뉴가 열려요",
-  "hint.key2": "나를 클릭해도 돼요",
-  "hint.click": "나를 클릭하면 메뉴가 열려요",
+  "hint.key2": "평소엔 클릭이 나를 통과해요",
 
   // 메모장
   "memo.placeholder": "이 페이지에 남길 메모… (자동 저장)",
@@ -88,9 +86,9 @@ const ko = {
   "opt.petColor": "펫 {n} 색",
 
   "opt.openMenu": "메뉴 여는 법",
-  "opt.openMenuHelp": "이 키를 누르고 있으면 마우스 주변에 기능들이 원형으로 펼쳐져요. 원하는 쪽으로 마우스를 옮기고 키를 떼면 실행돼요. 아무것도 안 고르고 떼면 그냥 닫혀요. 펫을 직접 클릭해도 같은 메뉴가 열려요.",
+  "opt.openMenuHelp": "평소에는 펫이 클릭을 가로채지 않아요(펫 위를 클릭해도 페이지가 눌려요). 이 키를 누르고 있으면 마우스 주변에 기능들이 원형으로 펼쳐지고, 원하는 쪽으로 옮겨 키를 떼면 실행돼요. 키를 누른 채 펫을 클릭하면 메뉴가 펫 옆에 고정돼서 키를 떼고 골라도 돼요.",
   "opt.menuKey": "메뉴 키",
-  "opt.keyOff": "키로 열지 않기 (펫 클릭만)",
+  "opt.keyAltShiftNote": "Alt+Shift (윈도우 입력 언어 전환과 겹칠 수 있어요)",
   "opt.hintAgain": "처음 안내 다시 보기",
   "opt.hintAgainDone": "다음에 페이지를 열면 안내가 다시 떠요",
 
@@ -144,15 +142,13 @@ const en: Dict = {
   "toast.copyFailed": "Couldn't copy",
   "toast.top": "↑ Back to top",
 
-  "pet.titleKey": "Click, or hold {key}, to open the menu",
-  "pet.titleClick": "Click to open the menu",
+  "pet.title": "Click to pin the menu next to the pet",
   "radial.pickKey": "Point at one, then release {key}",
   "radial.pickClick": "Pick one · Esc to close",
   "radial.memoOpen": "Has a memo · open",
   "memo.exists": "This page has a memo",
   "hint.key1": "Hold {key} to open the menu",
-  "hint.key2": "or just click me",
-  "hint.click": "Click me to open the menu",
+  "hint.key2": "Clicks go right through me otherwise",
 
   "memo.placeholder": "A note for this page… (saved automatically)",
   "memo.autosave": "Autosave",
@@ -205,9 +201,9 @@ const en: Dict = {
   "opt.petColor": "Pet {n} color",
 
   "opt.openMenu": "Opening the menu",
-  "opt.openMenuHelp": "Hold this key and your actions spread in a circle around the mouse. Move toward one and release the key to run it. Release without choosing to just close it. Clicking the pet opens the same menu.",
+  "opt.openMenuHelp": "The pet never catches your clicks (clicking on it clicks the page underneath). Hold this key and your actions spread in a circle around the mouse; move toward one and release the key to run it. Click the pet while holding the key to pin the menu next to it, so you can release the key and pick.",
   "opt.menuKey": "Menu key",
-  "opt.keyOff": "No key (click the pet only)",
+  "opt.keyAltShiftNote": "Alt+Shift (may clash with the Windows input language switch)",
   "opt.hintAgain": "Show the first-time tip again",
   "opt.hintAgainDone": "The tip will show on the next page you open",
 
@@ -263,4 +259,4 @@ export function makeT(lang: Lang): T {
 }
 
 /** 메뉴 키 이름(화면 표시용) */
-export const KEY_LABEL: Record<string, string> = { Alt: "Alt", Control: "Ctrl", Shift: "Shift" };
+export const KEY_LABEL: Record<string, string> = { Alt: "Alt", Control: "Ctrl", Shift: "Shift", AltShift: "Alt+Shift" };

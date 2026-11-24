@@ -14,11 +14,13 @@ export const CSS = `
 .root.active{opacity:1}
 .root.dim{opacity:.12}
 .root.hide{opacity:0}
-.root.dim .hit,.root.hide .hit{pointer-events:none}
+
 .pet{position:absolute;left:0;top:0;will-change:transform}
 .pet>:first-child{transition:filter .15s}
-.pet.hot>:first-child{filter:drop-shadow(0 0 3px var(--glow)) drop-shadow(0 0 1px var(--glow))}
-.hit{position:absolute;border-radius:45%;pointer-events:auto;cursor:pointer}
+/* 평소엔 펫이 클릭을 전혀 가로채지 않는다. 메뉴 키를 누르고 있는 동안(.armed)만 클릭·호버 반응 */
+.hit{position:absolute;border-radius:45%;pointer-events:none}
+.root.armed:not(.dim):not(.hide) .hit{pointer-events:auto;cursor:pointer}
+.root.armed .pet.hot>:first-child{filter:drop-shadow(0 0 3px var(--glow)) drop-shadow(0 0 1px var(--glow))}
 .badge{position:absolute;width:7px;height:7px;border-radius:50%;background:#A259FF;box-shadow:0 0 0 1.5px var(--surface)}
 .spark{position:absolute;color:#fff;font:700 var(--sp,12px)/1 ${FONT};text-shadow:0 0 2px var(--glow),0 0 4px var(--glow);opacity:0;pointer-events:none}
 .pet.idle .spark{animation:twinkle 3.2s ease-in-out infinite}
@@ -29,7 +31,6 @@ export const CSS = `
 .bubble kbd{font:700 11px/1 ${FONT};background:var(--tip-text);color:var(--tip);border-radius:4px;padding:2px 5px;margin:0 1px}
 .toast{position:absolute;transform:translate(-50%,-100%);background:var(--tip);color:var(--tip-text);font:600 12px/1 ${FONT};padding:6px 9px;border-radius:8px;
   white-space:nowrap;box-shadow:0 4px 12px var(--shadow);pointer-events:none}
-.catcher{position:absolute;inset:0;pointer-events:auto;cursor:default}
 .ring{position:absolute;border-radius:50%;border:2px dashed var(--ring);transform:translate(-50%,-50%);pointer-events:none;animation:fade .15s ease-out}
 .center{position:absolute;transform:translate(-50%,-50%);font:600 11.5px/1 ${FONT};color:var(--text);background:var(--surface);
   padding:5px 8px;border-radius:999px;box-shadow:0 2px 8px var(--shadow);white-space:nowrap;pointer-events:none}

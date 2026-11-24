@@ -2,7 +2,17 @@
 
 export type ActionId = "link" | "memo" | "copy" | "top";
 export type SkinId = "slime" | "cursor" | "image";
-export type MenuKey = "Alt" | "Control" | "Shift" | "off";
+/** 누르고 있는 동안 펫·원형 메뉴가 반응하는 키(조합) */
+export type MenuKey = "Alt" | "Control" | "Shift" | "AltShift";
+export const MENU_KEYS: MenuKey[] = ["Alt", "Control", "Shift", "AltShift"];
+
+/** 메뉴 키가 요구하는 조합키 */
+export const MENU_KEY_SPEC: Record<MenuKey, { alt: boolean; ctrl: boolean; shift: boolean }> = {
+  Alt: { alt: true, ctrl: false, shift: false },
+  Control: { alt: false, ctrl: true, shift: false },
+  Shift: { alt: false, ctrl: false, shift: true },
+  AltShift: { alt: true, ctrl: false, shift: true },
+};
 export type ThemePref = "system" | "light" | "dark";
 export type LangPref = "auto" | "ko" | "en";
 
@@ -17,7 +27,7 @@ export interface MenuItem {
 /** chrome.storage.sync 에 저장되는 설정 */
 export interface Settings {
   enabled: boolean;
-  /** 누르고 있는 동안 원형 메뉴가 펼쳐지는 키 */
+  /** 누르고 있는 동안 원형 메뉴가 펼쳐지고 펫을 클릭할 수 있는 키. 평소에는 펫이 클릭을 가로채지 않는다 */
   menuKey: MenuKey;
   /** 펫을 띄우지 않을 사이트(hostname, 하위 도메인 포함) */
   excluded: string[];
@@ -72,7 +82,10 @@ const LEGACY_IMAGE_KEY = "skinImage";
 
 export async function loadSettings(): Promise<Settings> {
   const got = (await chrome.storage.sync.get(DEFAULTS as unknown as Record<string, unknown>)) as unknown as Settings;
-  return { ...DEFAULTS, ...got };
+  const s = { ...DEFAULTS, ...got };
+  // v0.6 이전의 "off"(키로 열지 않기)는 이제 없다: 펫을 쓰려면 키가 필요하므로 기본 키로
+  if (!MENU_KEYS.includes(s.menuKey)) s.menuKey = DEFAULTS.menuKey;
+  return s;
 }
 
 export function saveSettings(patch: Partial<Settings>): Promise<void> {

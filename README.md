@@ -3,7 +3,7 @@
 작은 도트 슬라임이 내 마우스 **살짝 옆·뒤**에서 통통 튀며 따라다니는 크롬 확장(MV3)입니다.
 **Alt를 누르고 있으면** 마우스 주변에 기능(자주 가는 링크, 이 페이지 메모, URL 복사, 맨 위로)이 원형으로 펼쳐지고, 원하는 쪽으로 마우스를 옮겨 Alt를 떼면 실행됩니다.
 
-평소엔 화면을 거의 가리지 않습니다. 기본 1마리, 36px, 이름표 없음, 클릭은 페이지로 통과(펫 자체를 누를 때만 빼고).
+평소엔 화면을 거의 가리지 않습니다. 기본 1마리, 36px, 이름표 없음. **펫은 클릭을 전혀 가로채지 않아서** 펫 위를 눌러도 아래 페이지가 눌립니다. 메뉴 키(기본 <kbd>Alt</kbd>)를 누르고 있을 때만 펫과 메뉴가 반응합니다.
 
 ```
               ● GitHub
@@ -48,15 +48,18 @@ pnpm build
 
 ## 쓰는 법
 
-처음 설치하고 페이지에서 마우스를 움직이면 펫 위에 "Alt를 누르고 있으면 메뉴가 열려요" 안내가 한 번 뜹니다.
+처음 설치하고 페이지에서 마우스를 움직이면 펫 위에 "Alt를 누르고 있으면 메뉴가 열려요 · 평소엔 클릭이 나를 통과해요" 안내가 한 번 뜹니다.
 
 - **따라다니기**: 마우스를 움직이면 펫이 마우스 뒤쪽으로 처지며 통통 따라오고, 멈추면 마우스 오른쪽 아래(화면 끝이면 반대쪽)에 앉습니다. 오래 쉬고 있으면 머리 위가 가끔 반짝입니다.
-- **메뉴 열기 1: 키를 누르고 있기 (주된 방법)**
-  1. <kbd>Alt</kbd>를 누르고 있으면 마우스 주변에 기능들이 원형으로 펼쳐집니다(12시 방향부터 시계 방향).
+- **평소에는 투명 인간**: 펫은 클릭·호버를 가로채지 않습니다(`pointer-events: none`). 펫 위를 클릭하면 그 아래 링크·버튼이 눌리고, 커서 모양도 바뀌지 않습니다.
+- **메뉴 키를 누르고 있기 (주된 방법)**
+  1. 메뉴 키(기본 <kbd>Alt</kbd>)를 누르고 있으면 마우스 주변에 기능들이 원형으로 펼쳐집니다(12시 방향부터 시계 방향). 누르는 동안 펫은 제자리에 멈춥니다.
   2. 마우스를 원하는 쪽으로 조금 옮기면 그 항목이 골라지고, 가운데에 무엇을 할지 보입니다.
-  3. <kbd>Alt</kbd>를 떼면 실행됩니다. 항목을 직접 클릭해도 됩니다.
+  3. 키를 떼면 실행됩니다. 키를 누른 채 항목을 클릭해도 됩니다.
   4. 아무것도 안 고르고 떼거나, 다른 키와 함께 누르거나(예: <kbd>Alt</kbd>+<kbd>←</kbd>), 짧게 톡 치기만 하면 그냥 닫힙니다.
-- **메뉴 열기 2: 펫 클릭**: 펫에 마우스를 천천히 가져가면 펫이 도망가지 않고 멈추고, 테두리가 빛납니다. 클릭하면 펫 주변에 같은 메뉴가 열리고, 항목을 클릭해 고릅니다. <kbd>Esc</kbd>나 빈 곳 클릭으로 닫힙니다.
+- **메뉴 고정하기**: 키를 누른 채 **펫을 클릭**하면 메뉴가 펫 옆에 고정됩니다. 이제 키를 떼고 천천히 항목을 클릭해 고르면 됩니다. <kbd>Esc</kbd>나 메뉴 바깥 클릭으로 닫힙니다(바깥 클릭은 페이지에도 그대로 전달됨).
+- **브라우저 기본 동작과 겹치지 않게**: 키를 누른 채 펫이나 메뉴를 클릭할 때만 기본 동작(예: <kbd>Alt</kbd>+클릭 = 링크 다운로드, <kbd>Ctrl</kbd>+클릭 = 새 탭)을 막습니다. 펫이 아닌 곳을 클릭하면 페이지 동작은 그대로입니다.
+- **메뉴 키 바꾸기**: 설정 창 **메뉴 여는 법**에서 <kbd>Alt</kbd> · <kbd>Ctrl</kbd> · <kbd>Shift</kbd> · <kbd>Alt</kbd>+<kbd>Shift</kbd> 중에 고릅니다. <kbd>Alt</kbd>+<kbd>Shift</kbd>는 윈도우 입력 언어 전환 단축키와 겹칠 수 있습니다.
 - 링크: 그냥 = 새 탭(바로 옆), <kbd>Shift</kbd>를 같이 = 지금 탭, <kbd>Ctrl</kbd>/<kbd>⌘</kbd>를 같이 = 뒤쪽 탭. 결과는 짧은 말풍선으로 알려 줍니다.
 - 메모: 작은 메모장이 뜨고 페이지(주소의 경로까지)별로 자동 저장. 메모가 있는 페이지에선 펫 머리 위에 보라색 점. 메모장에서 치는 키는 페이지 단축키(유튜브 `k`, 깃허브 `s` 등)로 새지 않습니다.
 - 페이지 입력창에 글을 쓰기 시작하면 펫이 거의 투명해지고, 마우스를 움직이면 돌아옵니다. 창 밖으로 나가거나 전체화면이면 숨습니다.
@@ -64,7 +67,16 @@ pnpm build
 - **다크모드**: 설정 창 **화면·언어**에서 시스템 따라가기(기본) · 라이트 · 다크. 설정 창뿐 아니라 페이지 위에 뜨는 원형 메뉴, 메모장, 안내 말풍선도 따라 바뀝니다.
 - **언어**: 자동(브라우저 언어, 기본) · 한국어 · English. 확장 이름·설명은 크롬 언어를 따릅니다.
 
-참고: 윈도우 크롬에서 <kbd>Alt</kbd>만 눌렀다 떼면 원래 크롬 메뉴 버튼으로 포커스가 가는데, 펫이 켜진 페이지에서는 이 동작을 막아 둡니다. 불편하면 설정 창에서 메뉴 키를 <kbd>Ctrl</kbd>·<kbd>Shift</kbd>로 바꾸거나 끌 수 있습니다.
+참고: 윈도우 크롬에서 <kbd>Alt</kbd>만 눌렀다 떼면 원래 크롬 메뉴 버튼으로 포커스가 가는데, 메뉴 키가 <kbd>Alt</kbd>를 포함하면 펫이 켜진 페이지에서는 이 동작을 막아 둡니다. 불편하면 메뉴 키를 <kbd>Ctrl</kbd>이나 <kbd>Shift</kbd>로 바꾸세요.
+
+### How to use (English)
+
+- The pet follows your mouse and **never catches clicks**: clicking on it clicks whatever is underneath.
+- **Hold the menu key** (Alt by default; Ctrl, Shift or Alt+Shift in settings): your actions spread in a circle around the mouse and the pet stops moving. Move toward an item and **release the key** to run it. Releasing without choosing, a quick tap, or pressing another key with it (e.g. Alt+←) just closes the menu.
+- **Pin the menu**: while holding the key, **click the pet**. The menu stays next to it after you release the key; click an item, press Esc, or click elsewhere to close it.
+- Browser defaults such as Alt+click (download) or Ctrl+click (new tab) are blocked only when you click the pet or the menu while holding the key. Everywhere else the page behaves as usual.
+- Links: click = new tab next to this one, with Shift = this tab, with Ctrl/⌘ = background tab. The memo is saved per page and marked with a purple dot on the pet.
+- On/off: the switch at the top of the settings window (toolbar icon) or Alt+Shift+C. Theme (system/light/dark) and language (auto/Korean/English) are under **Display & language**.
 
 ## 설정 창
 
@@ -74,7 +86,7 @@ pnpm build
 
 - **모양**: 스킨(슬라임 · 커서 · 내 이미지·GIF, 움직이는 미리보기), 개수(1~3), 크기(24~64px), 평소 투명도, 펫별 색
 - **내 이미지·GIF로 바꾸기**: 펫마다 칸이 하나씩 있어요. 파일을 칸에 끌어다 놓거나 클릭해서 고르면 바로 그 그림으로 바뀝니다(스킨도 자동으로 '내 이미지·GIF'로). 자세한 건 아래 [내 GIF로 바꾸기](#내-gif로-바꾸기).
-- **메뉴 여는 법**: 메뉴 키(Alt · Ctrl · Shift · 키로 열지 않기), 처음 안내 다시 보기
+- **메뉴 여는 법**: 메뉴 키(Alt · Ctrl · Shift · Alt+Shift), 처음 안내 다시 보기
 - **기능 메뉴**: 원형 메뉴에 나올 항목별 색 · 이름 · 기능 · 링크 주소, 순서 바꾸기, 추가(최대 8개)·삭제
 - **화면·언어**: 테마(시스템·라이트·다크), 언어(자동·한국어·English)
 - 펫을 띄우지 않을 사이트, 저장된 메모 목록

@@ -1,6 +1,6 @@
 {
   "name": "cursor-crew",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "description": "작은 도트 펫이 마우스를 따라다니다가 원형 메뉴로 링크 열기·메모를 해 주는 크롬 확장",
   "type": "module",

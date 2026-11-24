@@ -61,7 +61,7 @@ export default function Options() {
     ["Alt", "Alt"],
     ["Control", "Ctrl"],
     ["Shift", "Shift"],
-    ["off", t("opt.keyOff")],
+    ["AltShift", t("opt.keyAltShiftNote")],
   ];
 
   return (

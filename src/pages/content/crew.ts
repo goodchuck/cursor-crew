@@ -1,14 +1,16 @@
 /*
  * Crew: 펫(1~3마리)이 마우스를 따라다니고, 원형 메뉴·메모장·첫 안내를 띄운다.
  *
- * 메뉴 여는 법
- *  1) 메뉴 키(기본 Alt)를 누르고 있기 → 마우스 주변에 기능들이 원형으로 펼쳐진다.
- *     마우스를 그쪽으로 옮기고 키를 떼면(또는 클릭하면) 실행. 아무것도 안 고르고 떼면 그냥 닫힘.
- *  2) 펫을 직접 클릭 → 펫 주변에 같은 메뉴. 마우스가 펫에 천천히 다가가면 펫은 도망가지 않고 멈춘다.
+ * 평소에는 펫이 클릭을 전혀 가로채지 않는다(pointer-events: none). 펫 위를 눌러도 아래 페이지가 눌린다.
+ * 메뉴 키(기본 Alt, 설정에서 Ctrl·Shift·Alt+Shift)를 누르고 있는 동안만 펫·메뉴가 반응한다.
+ *  1) 키를 누르고 있기 → 마우스 주변에 기능들이 원형으로 펼쳐진다.
+ *     마우스를 그쪽으로 옮기고 키를 떼면(또는 칩을 클릭하면) 실행. 아무것도 안 고르고 떼면 그냥 닫힘.
+ *  2) 키를 누른 채 펫을 클릭 → 메뉴가 펫 옆에 고정되어 키를 떼고 골라도 된다.
+ * 마우스가 펫에 천천히 다가가면 펫은 도망가지 않고 멈춘다.
  *
  * 겉모습은 shared/skins.ts, 기능은 actions.ts, 글자는 shared/i18n.ts 가 맡는다.
  */
-import { MAX_CREW, MAX_PETS, HINT_SEEN_KEY, DEFAULTS, memoKey, type MenuItem, type Settings, type Memo } from "@src/shared/settings";
+import { MAX_CREW, MAX_PETS, HINT_SEEN_KEY, DEFAULTS, MENU_KEY_SPEC, memoKey, type MenuItem, type MenuKey, type Settings, type Memo } from "@src/shared/settings";
 import { KEY_LABEL, type T } from "@src/shared/i18n";
 import { getSkin, type Skin, type SkinBody } from "@src/shared/skins";
 import { ACTIONS, itemHint, itemName, type ActionHost, type Mods, type Point } from "./actions";
@@ -73,7 +75,8 @@ export class Crew implements ActionHost {
   mouse: Point | null;
   private cfg: Settings;
   private size: number;
-  private key: string | null;
+  private key: MenuKey;
+  private armed = false; // 메뉴 키를 누르고 있는 중
   private mv = { x: 0, y: 0 }; // 마우스 속도(px/s, 부드럽게)
   private lastMove = performance.now();
   private lastEv = 0;
@@ -96,7 +99,7 @@ export class Crew implements ActionHost {
     this.cfg = cfg;
     this.t = t;
     this.size = clamp(+cfg.size || 36, 20, 72);
-    this.key = KEY_LABEL[cfg.menuKey] ? cfg.menuKey : null; // null = 키로 열기 끔
+    this.key = MENU_KEY_SPEC[cfg.menuKey] ? cfg.menuKey : DEFAULTS.menuKey;
     this.mouse = mouse;
     this.visible = !!mouse;
 
@@ -130,6 +133,7 @@ export class Crew implements ActionHost {
     listen<KeyboardEvent>(window, "keydown", (e) => this.onKeyDown(e), { capture: true });
     listen<KeyboardEvent>(window, "keyup", (e) => this.onKeyUp(e), { capture: true });
     listen(window, "blur", () => {
+      this.disarm();
       this.closeRadial();
       this.hide();
     });
@@ -149,7 +153,7 @@ export class Crew implements ActionHost {
     const s = this.size;
     const t = this.t;
     const body = skin.create(color, s, { image, pixelated: !!this.cfg.imagePixelated });
-    const hit = h("div", { class: "hit", title: this.key ? t("pet.titleKey", { key: KEY_LABEL[this.key] }) : t("pet.titleClick") });
+    const hit = h("div", { class: "hit", title: t("pet.title") });
     Object.assign(hit.style, { left: -s * 0.55 + "px", top: -s * 1.05 + "px", width: s * 1.1 + "px", height: s * 1.1 + "px" });
     const spark = h("div", { class: "spark", text: "✦" });
     Object.assign(spark.style, { left: s * 0.3 + "px", top: -s * 1.15 + "px" });
@@ -166,15 +170,19 @@ export class Crew implements ActionHost {
       if (this.hot === pet) this.hot = null;
       el.classList.remove("hot");
     });
-    hit.addEventListener("pointerdown", (e) => {
+    // 여기까지 오는 건 메뉴 키를 누르고 있을 때뿐(.armed). Alt+클릭(다운로드)·Ctrl+클릭(새 탭) 같은 기본 동작은 막는다
+    const swallow = (e: Event) => {
       e.preventDefault();
       e.stopPropagation();
-    });
+    };
+    hit.addEventListener("pointerdown", swallow);
+    hit.addEventListener("mousedown", swallow);
+    hit.addEventListener("auxclick", swallow);
     hit.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (this.radial) this.closeRadial();
-      else this.openRadial("click", { x: pet.x, y: pet.y - s * 0.5 });
+      swallow(e);
+      const pinned = this.radial?.mode === "click";
+      this.closeRadial();
+      if (!pinned) this.openRadial("click", { x: pet.x, y: pet.y - s * 0.5 });
     });
     this.root.appendChild(el);
     return pet;
@@ -194,11 +202,8 @@ export class Crew implements ActionHost {
   private targetFor(pet: Pet, w: number): Point & { hold?: boolean } {
     const s = this.size;
     const mouse = this.mouse!;
-    if (this.radial) {
-      // 메뉴가 열리면 펫들은 가운데 아래로 모인다
-      const c = this.radial;
-      return { x: c.cx + (pet.i - (this.pets.length - 1) / 2) * (s * 0.95), y: c.cy + s * 0.35 + 6 };
-    }
+    // 메뉴가 열려 있는 동안(메뉴 키를 누르고 있는 동안)은 펫이 제자리에 멈춘다 → 키를 누른 채 펫을 클릭할 수 있게
+    if (this.radial || this.armed) return { x: pet.x, y: pet.y, hold: true };
     // 마우스가 천천히 다가오거나 바로 위에 오면 도망가지 않고 그 자리에 멈춘다(잡을 수 있게).
     // 빠르게 지나가는 건 이동으로 보고 그냥 따라간다. 충분히 멀어지면 다시 따라간다.
     const dx = pet.x - mouse.x;
@@ -242,33 +247,63 @@ export class Crew implements ActionHost {
     this.wake();
   }
 
+  // 펫·메뉴가 아닌 곳을 누르면 페이지 기본 동작은 그대로 두고, 열린 메뉴·메모장만 닫는다
   private onPageDown(e: PointerEvent) {
     if (e.composedPath().includes(this.host)) return;
     if (this.panel) this.closeMemo();
+    if (this.radial) this.closeRadial();
   }
 
   // ------------------------------------------------------------ 키
+  private get spec() {
+    return MENU_KEY_SPEC[this.key];
+  }
+  /** 이 키가 메뉴 키 조합에 들어가는 조합키인지 */
+  private isSpecKey(key: string) {
+    const sp = this.spec;
+    return (key === "Alt" && sp.alt) || (key === "Control" && sp.ctrl) || (key === "Shift" && sp.shift);
+  }
+  /** 지금 눌린 조합키가 메뉴 키와 정확히 같은지(다른 조합키가 더 눌려 있으면 아님) */
+  private comboHeld(e: KeyboardEvent) {
+    const sp = this.spec;
+    return e.altKey === sp.alt && e.ctrlKey === sp.ctrl && e.shiftKey === sp.shift && !e.metaKey;
+  }
+
+  private arm() {
+    this.armed = true;
+    this.root.classList.add("armed");
+  }
+  private disarm() {
+    this.armed = false;
+    this.root.classList.remove("armed");
+    clearTimeout(this.keyT);
+    this.keyT = 0;
+    if (this.hot) {
+      this.hot.el.classList.remove("hot");
+      this.hot = null;
+    }
+  }
+
   private onKeyDown(e: KeyboardEvent) {
     if (e.composedPath().includes(this.host)) return; // 메모장 안에서 치는 키
-    if (this.key && e.key === this.key) {
-      if (e.repeat) return;
-      if (this.key === "Alt") e.preventDefault(); // 윈도우에서 Alt 만 눌렀다 뗄 때 크롬 메뉴로 포커스가 가는 것 방지
+    if (this.isSpecKey(e.key)) {
+      // 윈도우에서 Alt 만 눌렀다 뗄 때 크롬 메뉴로 포커스가 가는 것 방지
+      if (e.key === "Alt") e.preventDefault();
+      if (e.repeat || this.armed || !this.comboHeld(e)) return;
       const typing = isEditable(e.target as Element) || isEditable(document.activeElement);
-      if (!this.visible || this.panel || (typing && this.key !== "Alt")) return;
-      if (+e.ctrlKey + +e.altKey + +e.shiftKey + +e.metaKey > 1) return; // 다른 조합키와 함께면 무시
-      clearTimeout(this.keyT);
+      if (!this.visible || this.panel || (typing && !this.spec.alt)) return;
+      this.arm();
       // 단축키의 일부로 잠깐 누르는 경우를 피하려고 아주 살짝 기다린다
       this.keyT = window.setTimeout(() => {
         this.keyT = 0;
-        if (this.mouse) this.openRadial("key", { ...this.mouse });
+        if (this.armed && this.mouse && !this.radial) this.openRadial("key", { ...this.mouse });
       }, 110);
       return;
     }
-    // 메뉴 키를 누른 채 다른 키를 치면(예: Alt+←) 단축키로 보고 접는다
-    if (this.keyT || this.radial?.mode === "key") {
-      clearTimeout(this.keyT);
-      this.keyT = 0;
-      this.closeRadial();
+    // 메뉴 키를 누른 채 다른 키를 치면(예: Alt+←, Ctrl+C) 단축키로 보고 접는다
+    if (this.armed) {
+      this.disarm();
+      if (this.radial?.mode === "key") this.closeRadial();
     }
     if (e.key === "Escape") {
       if (this.radial) return this.closeRadial();
@@ -282,13 +317,13 @@ export class Crew implements ActionHost {
   }
 
   private onKeyUp(e: KeyboardEvent) {
-    if (!this.key || e.key !== this.key) return;
-    if (this.key === "Alt") e.preventDefault();
-    if (this.keyT) {
-      clearTimeout(this.keyT);
-      this.keyT = 0;
-      return;
-    }
+    if (!this.isSpecKey(e.key)) return;
+    if (e.key === "Alt" && this.spec.alt) e.preventDefault();
+    if (!this.armed) return;
+    const quickTap = !!this.keyT;
+    this.disarm();
+    if (quickTap) return;
+    // 키 모드 메뉴는 키를 떼면 실행(고른 게 없으면 닫기). 펫을 클릭해 고정한 메뉴는 그대로 둔다
     const r = this.radial;
     if (r?.mode === "key") {
       const sel = r.sel;
@@ -310,12 +345,11 @@ export class Crew implements ActionHost {
     const cx = clamp(at.x, R + 70, vw - R - 70);
     const cy = clamp(at.y, R + 30, innerHeight - R - 30);
     const box = h("div", { class: "radial" });
-    const catcher = h("div", { class: "catcher" });
     const ring = h("div", { class: "ring" });
     Object.assign(ring.style, { left: cx + "px", top: cy + "px", width: R * 2 + "px", height: R * 2 + "px" });
     const center = h("div", { class: "center" });
     Object.assign(center.style, { left: cx + "px", top: cy + "px" });
-    box.append(catcher, ring);
+    box.append(ring);
     const slots = items.map((item, i): Slot => {
       const a = -Math.PI / 2 + (i * 2 * Math.PI) / n; // 12시 방향부터 시계 방향
       const x = cx + Math.cos(a) * R;
@@ -332,10 +366,11 @@ export class Crew implements ActionHost {
       const slot: Slot = { item, chip, a };
       // 칩이 가운데(마우스 밑)에서 튀어나올 때 저절로 골라지지 않게, 마우스를 움직인 뒤에만 호버로 고른다
       chip.addEventListener("pointerenter", () => this.radial?.moved && this.select(slot));
-      chip.addEventListener("pointerdown", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-      });
+      for (const type of ["pointerdown", "mousedown", "auxclick"])
+        chip.addEventListener(type, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        });
       chip.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -346,18 +381,6 @@ export class Crew implements ActionHost {
       return slot;
     });
     box.appendChild(center);
-    // 빈 곳 클릭: 키 모드면 고른 것 실행, 아니면 닫기
-    catcher.addEventListener("pointerdown", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-    });
-    catcher.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const sel = this.radial?.mode === "key" ? this.radial.sel : null;
-      this.closeRadial();
-      if (sel) this.run(sel.item, e, { x: cx, y: cy });
-    });
     this.root.appendChild(box);
     this.root.classList.add("active");
     this.radial = { mode, cx, cy, el: box, center, slots, sel: null, from: { ...(this.mouse || at) } };
@@ -398,7 +421,7 @@ export class Crew implements ActionHost {
         ? t("radial.memoOpen")
         : itemHint(slot.item, t)
       : r.mode === "key"
-        ? t("radial.pickKey", { key: KEY_LABEL[this.key!] })
+        ? t("radial.pickKey", { key: KEY_LABEL[this.key] })
         : t("radial.pickClick");
   }
 
@@ -422,11 +445,9 @@ export class Crew implements ActionHost {
     await chrome.storage.local.set({ [HINT_SEEN_KEY]: Date.now() });
     const t = this.t;
     const b = h("div", { class: "bubble" });
-    if (this.key) {
-      // "{key}" 자리에 키 모양을 넣는다
-      const [before, after] = t("hint.key1", { key: "\u0000" }).split("\u0000");
-      b.append(before, h("kbd", { text: KEY_LABEL[this.key] }), after, h("br"), t("hint.key2"));
-    } else b.append(t("hint.click"));
+    // "{key}" 자리에 키 모양을 넣는다
+    const [before, after] = t("hint.key1", { key: "\u0000" }).split("\u0000");
+    b.append(before, h("kbd", { text: KEY_LABEL[this.key] }), after, h("br"), t("hint.key2"));
     this.root.appendChild(b);
     this.hint = { el: b, until: performance.now() + 9000 };
   }
