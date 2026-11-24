@@ -42,6 +42,15 @@ pnpm build
 | `pnpm zip` | `dist/`를 `cursor-crew-<버전>.zip`으로 묶기(웹 스토어 업로드용, Windows에서도 Node 로 동작) |
 | `pnpm typecheck` | 타입 검사만 |
 | `pnpm harness` | 확장 없이 브라우저에서 미리보기: http://localhost:5181/harness.html (펫), http://localhost:5181/options.html (설정 창). `chrome.*`는 `test/chrome-shim.ts`가 흉내 내고 저장은 그 페이지의 localStorage 에 됩니다 |
+| `pnpm store:shots` | 웹 스토어용 스크린샷·프로모션 이미지를 `store/en/`, `store/ko/`에 다시 만들기(설치된 크롬을 headless로 사용) |
+
+## 크롬 웹 스토어에 올리기
+
+1. `package.json`의 `version`을 올립니다(manifest 버전이 여기서 나옴).
+2. `pnpm build`를 한 뒤 `pnpm zip`을 실행하면 `cursor-crew-<버전>.zip`이 만들어집니다. 이 파일을 [개발자 대시보드](https://chrome.google.com/webstore/devconsole)에 올립니다.
+3. 등록정보, 권한 근거, 데이터 사용 답변, 심사용 테스트 안내 문구는 [`store/LISTING.md`](store/LISTING.md)에 있습니다.
+4. 개인정보처리방침 내용은 [`store/PRIVACY.md`](store/PRIVACY.md)에 있고, 공개 URL에 올려서 링크를 넣습니다.
+5. 이미지는 `store/en/`, `store/ko/`에 있습니다. UI가 바뀌면 `pnpm store:shots`로 다시 찍습니다.
 
 스택은 `chzzk-web-extension`과 같습니다: Vite 6, `@crxjs/vite-plugin` 2, TypeScript, React 19 + Tailwind 4(설정 창에만). 펫은 모든 페이지에 들어가므로 React 없이 바닐라 TS + Shadow DOM 으로 가볍게 만듭니다.
 
