@@ -1,11 +1,14 @@
 /*
  * Cursor Crew: 콘텐츠 스크립트
  *
- * 작은 펫(기본: 도트 슬라임)이 내 마우스 살짝 옆·뒤에서 따라다닌다.
- *  - 움직이는 동안: 마우스 뒤쪽으로 처지며 따라옴. 펫이 여럿이면 줄줄이. 클릭은 전부 페이지로 통과.
- *  - 마우스를 settleMs 동안 멈추면: 펫이 마우스 옆에 앉는다. 펫에 호버(또는 클릭)하면 기능 메뉴가 펼쳐진다.
- *    근처에서 움직이는 동안은 따라오지 않고, 멀리 벗어나면 다시 따라온다.
- *  - 겉모습은 skins.js 가 맡는다(여기는 위치·물리·메뉴·기능만).
+ * 작은 펫(기본: 도트 슬라임)이 내 마우스 살짝 옆·뒤에서 따라다닌다. 평소 클릭은 전부 페이지로 통과.
+ *
+ * 메뉴 여는 법
+ *  1) 메뉴 키(기본 Alt)를 누르고 있기 → 마우스 주변에 기능들이 원형으로 펼쳐진다.
+ *     마우스를 그쪽으로 옮기고 키를 떼면(또는 클릭하면) 실행. 아무것도 안 고르고 떼면 그냥 닫힘.
+ *  2) 펫을 직접 클릭 → 펫 주변에 같은 메뉴. 마우스가 펫에 다가가면 펫은 도망가지 않고 멈춘다.
+ *
+ * 겉모습은 skins.js 가 맡는다(여기는 위치·물리·메뉴·기능만).
  */
 (() => {
   "use strict";
@@ -15,21 +18,22 @@
   const D = globalThis.CrewDefaults;
   const Skins = globalThis.CrewSkins;
   const store = chrome.storage;
+  const KEY_LABEL = { Alt: "Alt", Control: "Ctrl", Shift: "Shift" };
 
   // ---------------------------------------------------------------- 기능들
-  // item: 메뉴 항목 설정, ev: 클릭 이벤트, crew: Crew, pet: 메뉴를 연 펫
+  // item: 메뉴 항목 설정, mods: {shiftKey, ctrlKey, metaKey}, crew: Crew, at: 결과를 보여 줄 위치 {x, y}
   const ACTIONS = {
-    link(item, ev, crew, pet) {
-      if (!item.url) return crew.toast(pet, "URL이 없어요 · 옵션에서 설정");
-      chrome.runtime.sendMessage({ type: "crew:open", url: item.url, sameTab: ev.shiftKey, background: ev.ctrlKey || ev.metaKey }, (res) => {
-        if (chrome.runtime.lastError || !res || !res.ok) crew.toast(pet, "열 수 없는 주소");
+    link(item, mods, crew, at) {
+      if (!item.url) return crew.toast(at, "URL이 없어요 · 옵션에서 설정");
+      chrome.runtime.sendMessage({ type: "crew:open", url: item.url, sameTab: !!mods.shiftKey, background: !!(mods.ctrlKey || mods.metaKey) }, (res) => {
+        if (chrome.runtime.lastError || !res || !res.ok) crew.toast(at, "열 수 없는 주소");
       });
-      crew.toast(pet, ev.shiftKey ? "↗ 이 탭에서 여는 중" : "↗ " + (item.name || "링크"));
+      crew.toast(at, mods.shiftKey ? "↗ 이 탭에서 여는 중" : "↗ " + (item.name || "링크"));
     },
-    memo(item, ev, crew, pet) {
-      crew.openMemo(pet, item);
+    memo(item, mods, crew, at) {
+      crew.openMemo(at, item);
     },
-    async copy(item, ev, crew, pet) {
+    async copy(item, mods, crew, at) {
       let ok = false;
       try {
         await navigator.clipboard.writeText(location.href);
@@ -45,11 +49,11 @@
         } catch (_) {}
         ta.remove();
       }
-      crew.toast(pet, ok ? "✓ URL 복사됨" : "복사 실패");
+      crew.toast(at, ok ? "✓ URL 복사됨" : "복사 실패");
     },
-    top(item, ev, crew, pet) {
+    top(item, mods, crew, at) {
       window.scrollTo({ top: 0, behavior: "smooth" });
-      crew.toast(pet, "↑ 맨 위로");
+      crew.toast(at, "↑ 맨 위로");
     },
   };
 
@@ -57,7 +61,7 @@
     if (item.action === "link") {
       try {
         const u = new URL(/^[a-z][a-z0-9+.-]*:/i.test(item.url) ? item.url : "https://" + item.url);
-        return u.hostname.replace(/^www\./, "");
+        return "↗ " + u.hostname.replace(/^www\./, "");
       } catch (_) {
         return "링크";
       }
@@ -90,23 +94,35 @@
 .root.active{opacity:1}
 .root.dim{opacity:.12}
 .root.hide{opacity:0}
+.root.dim .hit,.root.hide .hit{pointer-events:none}
 .pet{position:absolute;left:0;top:0;will-change:transform}
-.hit{position:absolute;border-radius:45%}
-.settled .hit{pointer-events:auto;cursor:pointer}
+.pet>:first-child{transition:filter .15s}
+.pet.hot>:first-child{filter:drop-shadow(0 0 3px var(--glow)) drop-shadow(0 0 1px var(--glow))}
+.hit{position:absolute;border-radius:45%;pointer-events:auto;cursor:pointer}
 .badge{position:absolute;width:7px;height:7px;border-radius:50%;background:#A259FF;box-shadow:0 0 0 1.5px #fff}
-.menu{position:absolute;pointer-events:auto;min-width:170px;max-width:260px;padding:5px;border-radius:12px;background:rgba(255,255,255,.98);
-  color:#1d1d1f;box-shadow:0 10px 30px rgba(0,0,0,.2),0 0 0 1px rgba(0,0,0,.06);font:13px/1.3 ${FONT};animation:pop .12s ease-out}
-.menu button{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;border:0;background:none;color:inherit;font:inherit;
-  text-align:left;padding:7px 9px;border-radius:8px;cursor:pointer}
-.menu button:hover,.menu button:focus-visible{background:#f0f0f4;outline:0}
-.menu .dot{width:8px;height:8px;border-radius:50%;flex:none}
-.menu .name{font-weight:600;white-space:nowrap}
-.menu .hint{margin-left:auto;padding-left:12px;color:#8a8a90;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.menu .has{color:#A259FF}
+.spark{position:absolute;color:#fff;font:700 var(--sp,12px)/1 ${FONT};text-shadow:0 0 2px var(--glow),0 0 4px var(--glow);opacity:0;pointer-events:none}
+.pet.idle .spark{animation:twinkle 3.2s ease-in-out infinite}
+@keyframes twinkle{0%,70%,100%{opacity:0;transform:scale(.4)}80%{opacity:1;transform:scale(1)}90%{opacity:.2;transform:scale(.7)}}
+.bubble{position:absolute;transform:translate(-50%,-100%);max-width:260px;background:#1d1d1f;color:#fff;font:600 12.5px/1.4 ${FONT};
+  padding:7px 10px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.25);white-space:normal;text-align:center;pointer-events:none}
+.bubble::after{content:"";position:absolute;left:50%;bottom:-5px;margin-left:-5px;border:5px solid transparent;border-bottom:0;border-top-color:#1d1d1f}
+.bubble kbd{font:700 11px/1 ${FONT};background:#fff;color:#1d1d1f;border-radius:4px;padding:2px 5px;margin:0 1px}
 .toast{position:absolute;transform:translate(-50%,-100%);background:#1d1d1f;color:#fff;font:600 12px/1 ${FONT};padding:6px 9px;border-radius:8px;
-  white-space:nowrap;animation:pop .12s ease-out;box-shadow:0 4px 12px rgba(0,0,0,.2)}
-@keyframes pop{from{opacity:0;transform:scale(.94)}}
-.toast{animation:none}
+  white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.2);pointer-events:none}
+.catcher{position:absolute;inset:0;pointer-events:auto;cursor:default}
+.ring{position:absolute;border-radius:50%;border:2px dashed rgba(29,29,31,.18);transform:translate(-50%,-50%);pointer-events:none;animation:fade .15s ease-out}
+.center{position:absolute;transform:translate(-50%,-50%);font:600 11.5px/1 ${FONT};color:#1d1d1f;background:rgba(255,255,255,.95);
+  padding:5px 8px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.15);white-space:nowrap;pointer-events:none}
+.chip{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;gap:6px;padding:7px 11px 7px 9px;border-radius:999px;
+  background:#fff;color:#1d1d1f;font:600 13px/1 ${FONT};white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.18),0 0 0 1px rgba(0,0,0,.06);
+  pointer-events:auto;cursor:pointer;animation:fly .18s cubic-bezier(.2,.8,.3,1.2) both;transition:background .1s,color .1s,box-shadow .1s}
+.chip .dot{width:9px;height:9px;border-radius:50%;flex:none}
+.chip.sel{background:var(--c);color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.chip.sel .dot{background:#fff!important}
+.chip .has{width:6px;height:6px;border-radius:50%;background:#A259FF}
+.chip.sel .has{background:#fff}
+@keyframes fly{from{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.3)}}
+@keyframes fade{from{opacity:0}}
 .panel{position:absolute;width:300px;pointer-events:auto;background:#fff;color:#1d1d1f;border-radius:12px;
   box-shadow:0 12px 40px rgba(0,0,0,.22),0 0 0 1px rgba(0,0,0,.06);overflow:hidden;font:13px/1.45 ${FONT}}
 .panel .ph{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #eee}
@@ -124,15 +140,15 @@
     constructor(cfg, mouse, image) {
       this.cfg = cfg;
       this.size = clamp(+cfg.size || 36, 20, 72);
+      this.key = KEY_LABEL[cfg.menuKey] ? cfg.menuKey : null; // null = 키로 열기 끔
       this.mouse = mouse || null; // 화면(뷰포트) 좌표
       this.mv = { x: 0, y: 0 }; // 마우스 속도(px/s, 부드럽게)
       this.lastMove = performance.now();
-      this.settled = false;
-      this.anchor = null;
       this.visible = !!mouse;
-      this.menu = null;
+      this.radial = null;
       this.panel = null;
       this.hasMemo = false;
+      this.hot = null; // 마우스가 올라간 펫
 
       this.host = document.createElement("div");
       this.host.setAttribute("data-cursor-crew", "");
@@ -151,7 +167,7 @@
       document.documentElement.appendChild(this.host);
       this.refreshMemo();
 
-      // 페이지 이벤트(페이지 동작을 막지 않는다)
+      // 페이지 이벤트
       this.on = [];
       const listen = (t, fn, o) => {
         addEventListener(t, fn, o);
@@ -159,10 +175,14 @@
       };
       listen("mousemove", (e) => this.onMove(e), { passive: true, capture: true });
       listen("pointerdown", (e) => this.onPageDown(e), { capture: true });
-      listen("keydown", (e) => this.onKey(e), { capture: true });
-      listen("blur", () => this.hide());
+      listen("keydown", (e) => this.onKeyDown(e), { capture: true });
+      listen("keyup", (e) => this.onKeyUp(e), { capture: true });
+      listen("blur", () => {
+        this.closeRadial();
+        this.hide();
+      });
       this.onLeave = (e) => {
-        if (!e.relatedTarget) this.hide();
+        if (!e.relatedTarget && !this.radial) this.hide();
       };
       document.addEventListener("mouseout", this.onLeave);
       this.onFs = () => this.root.classList.toggle("hide", !!document.fullscreenElement || !this.visible);
@@ -176,13 +196,23 @@
     makePet(skin, color, i, image) {
       const s = this.size;
       const body = skin.create(color, s, { image });
-      const hit = h("div", { class: "hit" });
+      const hit = h("div", { class: "hit", title: this.key ? `클릭하거나 ${KEY_LABEL[this.key]}를 누르고 있으면 메뉴` : "클릭하면 메뉴" });
       Object.assign(hit.style, { left: -s * 0.55 + "px", top: -s * 1.05 + "px", width: s * 1.1 + "px", height: s * 1.1 + "px" });
-      const el = h("div", { class: "pet" }, body.el, hit);
+      const spark = h("div", { class: "spark", text: "✦" });
+      Object.assign(spark.style, { left: s * 0.3 + "px", top: -s * 1.15 + "px" });
+      const el = h("div", { class: "pet" }, body.el, hit, spark);
+      el.style.setProperty("--glow", color);
+      el.style.setProperty("--sp", Math.round(s * 0.36) + "px");
       const pet = { el, body, hit, color, i, x: 0, y: 0, vx: 0, vy: 0, k: i ? 60 : 85 };
       if (this.mouse) Object.assign(pet, this.restSpot(i, this.mouse));
-      hit.addEventListener("pointerenter", () => this.openMenu(pet));
-      hit.addEventListener("pointerleave", () => this.closeMenuSoon());
+      hit.addEventListener("pointerenter", () => {
+        this.hot = pet;
+        el.classList.add("hot");
+      });
+      hit.addEventListener("pointerleave", () => {
+        if (this.hot === pet) this.hot = null;
+        el.classList.remove("hot");
+      });
       hit.addEventListener("pointerdown", (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -190,8 +220,8 @@
       hit.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (this.menu && this.menu.pet === pet) this.closeMenu();
-        else this.openMenu(pet);
+        if (this.radial) this.closeRadial();
+        else this.openRadial("click", { x: pet.x, y: pet.y - s * 0.5 });
       });
       this.root.appendChild(el);
       return pet;
@@ -205,28 +235,38 @@
       const n = this.pets ? this.pets.length : 1;
       const fx = p.x > vw - (n * (s + 6) + 50) ? -1 : 1;
       const fy = p.y > innerHeight - s - 30 ? -1 : 1;
-      const x = p.x + fx * (s * 0.6 + 16 + i * (s + 6));
-      const y = fy > 0 ? p.y + s + 8 : p.y - 10;
-      return { x, y };
+      return { x: p.x + fx * (s * 0.6 + 16 + i * (s + 6)), y: fy > 0 ? p.y + s + 8 : p.y - 10 };
     }
 
-    targetFor(pet, center, w) {
+    targetFor(pet, w) {
       const s = this.size;
-      const rest = this.restSpot(pet.i, center);
+      if (this.radial) {
+        // 메뉴가 열리면 펫들은 가운데 아래로 모인다
+        const c = this.radial;
+        return { x: c.cx + (pet.i - (this.pets.length - 1) / 2) * (s * 0.95), y: c.cy + s * 0.35 + 6 };
+      }
+      // 마우스가 천천히 다가오거나 바로 위에 오면 도망가지 않고 그 자리에 멈춘다(잡을 수 있게).
+      // 빠르게 지나가는 건 이동으로 보고 그냥 따라간다. 충분히 멀어지면 다시 따라간다.
+      const dx = pet.x - this.mouse.x;
+      const dy = pet.y - s * 0.5 - this.mouse.y;
+      const d = Math.hypot(dx, dy);
+      const spd = Math.hypot(this.mv.x, this.mv.y);
+      const toward = this.mv.x * dx + this.mv.y * dy > 0;
+      if (pet.held) {
+        if (d > s * 2.3) pet.held = false;
+      } else if (d < s * 0.75 || (d < s * 1.6 && toward && spd > 20 && spd < 500)) pet.held = true;
+      if (pet.held) return { x: pet.x, y: pet.y, hold: true };
+      const rest = this.restSpot(pet.i, this.mouse);
       if (w <= 0) return rest;
       // 움직일 때: 앞사람(첫 펫은 마우스)의 뒤쪽으로 처진다
-      const lead = pet.i === 0 ? { x: center.x, y: center.y + s * 0.5, vx: this.mv.x, vy: this.mv.y } : this.pets[pet.i - 1];
+      const lead = pet.i === 0 ? { x: this.mouse.x, y: this.mouse.y + s * 0.5, vx: this.mv.x, vy: this.mv.y } : this.pets[pet.i - 1];
       const L = Math.hypot(lead.vx, lead.vy) || 1;
       const back = (pet.i === 0 ? s * 0.9 + 24 : s + 4) / L;
       const behind = { x: lead.x - lead.vx * back, y: lead.y - lead.vy * back + (pet.i === 0 ? s * 0.3 : 0) };
       return { x: rest.x + (behind.x - rest.x) * w, y: rest.y + (behind.y - rest.y) * w };
     }
 
-    get reach() {
-      return 250 + this.pets.length * (this.size + 6);
-    }
-
-    // ------------------------------------------------------------ 이벤트
+    // ------------------------------------------------------------ 마우스
     onMove(e) {
       const p = { x: e.clientX, y: e.clientY };
       const now = performance.now();
@@ -237,63 +277,223 @@
         this.mv.y += ((p.y - this.mouse.y) / dt - this.mv.y) * a;
       }
       this.lastEv = now;
+      this.lastMove = now;
       const first = !this.mouse;
       this.mouse = p;
       if (first) for (const pet of this.pets) Object.assign(pet, this.restSpot(pet.i, p));
       this.show();
       this.root.classList.remove("dim");
-      if (this.settled) {
-        const far = Math.hypot(p.x - this.anchor.x, p.y - this.anchor.y) > this.reach;
-        if (far && !this.panel) this.unsettle();
-      } else {
-        this.lastMove = now;
-      }
+      if (this.radial) this.pickByPointer();
+      if (first) this.maybeHint();
       this.wake();
     }
 
     onPageDown(e) {
       if (e.composedPath().includes(this.host)) return;
       if (this.panel) this.closeMemo();
-      if (this.menu) this.closeMenu();
     }
 
-    onKey(e) {
-      if (e.composedPath().includes(this.host)) return;
-      if (e.key === "Escape" && (this.panel || this.menu)) {
-        this.closeMemo();
-        this.closeMenu();
+    // ------------------------------------------------------------ 키
+    onKeyDown(e) {
+      if (e.composedPath().includes(this.host)) return; // 메모장 안에서 치는 키
+      if (this.key && e.key === this.key) {
+        if (e.repeat) return;
+        if (this.key === "Alt") e.preventDefault(); // 윈도우에서 Alt 만 눌렀다 뗄 때 크롬 메뉴로 포커스가 가는 것 방지
+        const typing = isEditable(e.target) || isEditable(document.activeElement);
+        if (!this.visible || this.panel || (typing && this.key !== "Alt")) return;
+        if (e.ctrlKey + e.altKey + e.shiftKey + e.metaKey > 1) return; // 다른 조합키와 함께면 무시
+        clearTimeout(this.keyT);
+        // 단축키의 일부로 잠깐 누르는 경우를 피하려고 아주 살짝 기다린다
+        this.keyT = setTimeout(() => {
+          this.keyT = 0;
+          if (this.mouse) this.openRadial("key", { ...this.mouse });
+        }, 110);
         return;
+      }
+      // 메뉴 키를 누른 채 다른 키를 치면(예: Alt+←) 단축키로 보고 접는다
+      if (this.keyT || (this.radial && this.radial.mode === "key")) {
+        clearTimeout(this.keyT);
+        this.keyT = 0;
+        this.closeRadial();
+      }
+      if (e.key === "Escape") {
+        if (this.radial) return this.closeRadial();
+        if (this.panel) return this.closeMemo();
       }
       // 페이지에서 글을 쓰는 중이면 방해하지 않게 흐려진다
       if (isEditable(e.target) || isEditable(document.activeElement)) {
         this.root.classList.add("dim");
-        if (this.settled && !this.panel) this.unsettle();
+        this.closeRadial();
       }
     }
 
+    onKeyUp(e) {
+      if (!this.key || e.key !== this.key) return;
+      if (this.key === "Alt") e.preventDefault();
+      if (this.keyT) {
+        clearTimeout(this.keyT);
+        this.keyT = 0;
+        return;
+      }
+      const r = this.radial;
+      if (r && r.mode === "key") {
+        const sel = r.sel;
+        this.closeRadial();
+        if (sel) this.run(sel.item, e, { x: r.cx, y: r.cy });
+      }
+    }
+
+    // ------------------------------------------------------------ 원형 메뉴
+    openRadial(mode, at) {
+      if (this.radial || this.panel) return;
+      this.dismissHint(true);
+      const items = this.cfg.crew.slice(0, D.maxCrew);
+      if (!items.length) return;
+      const n = items.length;
+      const R = clamp(48 + n * 11, 70, 130);
+      const vw = document.documentElement.clientWidth;
+      // 화면 끝이면 원이 잘리지 않게 가운데를 안쪽으로 민다
+      const cx = clamp(at.x, R + 70, vw - R - 70);
+      const cy = clamp(at.y, R + 30, innerHeight - R - 30);
+      const box = h("div", { class: "radial" });
+      const catcher = h("div", { class: "catcher" });
+      const ring = h("div", { class: "ring" });
+      Object.assign(ring.style, { left: cx + "px", top: cy + "px", width: R * 2 + "px", height: R * 2 + "px" });
+      const center = h("div", { class: "center" });
+      Object.assign(center.style, { left: cx + "px", top: cy + "px" });
+      box.append(catcher, ring);
+      const slots = items.map((item, i) => {
+        const a = -Math.PI / 2 + (i * 2 * Math.PI) / n; // 12시 방향부터 시계 방향
+        const x = cx + Math.cos(a) * R;
+        const y = cy + Math.sin(a) * R;
+        const dot = h("span", { class: "dot" });
+        dot.style.background = item.color;
+        const chip = h("div", { class: "chip", role: "menuitem" }, dot, h("span", { text: item.name || "기능" }));
+        if (item.action === "memo" && this.hasMemo) chip.appendChild(h("span", { class: "has", title: "이 페이지에 메모가 있어요" }));
+        chip.style.setProperty("--c", item.color);
+        chip.style.setProperty("--dx", (cx - x).toFixed(0) + "px");
+        chip.style.setProperty("--dy", (cy - y).toFixed(0) + "px");
+        chip.style.animationDelay = i * 18 + "ms";
+        Object.assign(chip.style, { left: x + "px", top: y + "px" });
+        const slot = { item, chip, a };
+        // 칩이 가운데(마우스 밑)에서 튀어나올 때 저절로 골라지지 않게, 마우스를 움직인 뒤에만 호버로 고른다
+        chip.addEventListener("pointerenter", () => this.radial && this.radial.moved && this.select(slot));
+        chip.addEventListener("pointerdown", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        });
+        chip.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.closeRadial();
+          this.run(item, e, { x: cx, y: cy });
+        });
+        box.appendChild(chip);
+        return slot;
+      });
+      box.appendChild(center);
+      // 빈 곳 클릭: 키 모드면 고른 것 실행, 아니면 닫기
+      catcher.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      });
+      catcher.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const r = this.radial;
+        const sel = r && r.mode === "key" ? r.sel : null;
+        this.closeRadial();
+        if (sel) this.run(sel.item, e, { x: cx, y: cy });
+      });
+      this.root.appendChild(box);
+      this.root.classList.add("active");
+      this.radial = { mode, cx, cy, R, el: box, center, slots, sel: null, from: { ...(this.mouse || at) } };
+      this.select(null);
+      this.wake();
+    }
+
+    // 키 모드: 메뉴를 연 자리에서 마우스를 옮긴 방향으로 고른다
+    pickByPointer() {
+      const r = this.radial;
+      if (!r || !this.mouse) return;
+      const dx = this.mouse.x - r.from.x;
+      const dy = this.mouse.y - r.from.y;
+      if (Math.hypot(dx, dy) > 6) r.moved = true;
+      if (r.mode !== "key") return;
+      if (Math.hypot(dx, dy) < 18) return this.select(null);
+      const a = Math.atan2(dy, dx);
+      let best = null;
+      let bestD = Infinity;
+      for (const s of r.slots) {
+        const d = Math.abs(Math.atan2(Math.sin(a - s.a), Math.cos(a - s.a)));
+        if (d < bestD) (best = s), (bestD = d);
+      }
+      this.select(best);
+    }
+
+    select(slot) {
+      const r = this.radial;
+      if (!r) return;
+      r.sel = slot;
+      for (const s of r.slots) s.chip.classList.toggle("sel", s === slot);
+      const keyName = this.key ? KEY_LABEL[this.key] : "";
+      r.center.textContent = slot
+        ? slot.item.action === "memo" && this.hasMemo
+          ? "메모 있음 · 열기"
+          : hintFor(slot.item)
+        : r.mode === "key"
+          ? `방향을 고르고 ${keyName}를 떼세요`
+          : "고르세요 · Esc 닫기";
+    }
+
+    closeRadial() {
+      const r = this.radial;
+      if (!r) return;
+      this.radial = null;
+      r.el.remove();
+      if (!this.panel) this.root.classList.remove("active");
+    }
+
+    run(item, mods, at) {
+      const fn = ACTIONS[item.action];
+      if (fn) fn(item, mods || {}, this, at);
+    }
+
+    // ------------------------------------------------------------ 처음 안내
+    async maybeHint() {
+      const got = await store.local.get("crewHintSeen");
+      if (got.crewHintSeen || this.dead) return;
+      await store.local.set({ crewHintSeen: Date.now() });
+      const b = h("div", { class: "bubble" });
+      if (this.key) b.append(h("kbd", { text: KEY_LABEL[this.key] }), " 를 누르고 있으면 메뉴가 열려요", h("br"), "나를 클릭해도 돼요");
+      else b.append("나를 클릭하면 메뉴가 열려요");
+      this.root.appendChild(b);
+      this.hint = { el: b, until: performance.now() + 9000 };
+    }
+    dismissHint() {
+      if (!this.hint) return;
+      this.hint.el.remove();
+      this.hint = null;
+    }
+
+    toast(at, text) {
+      const t = h("div", { class: "toast", text });
+      t.style.left = at.x + "px";
+      t.style.top = at.y - 16 + "px";
+      this.root.appendChild(t);
+      setTimeout(() => t.remove(), 1300);
+    }
+
+    // ------------------------------------------------------------ 보이기
     show() {
       if (this.visible) return;
       this.visible = true;
       this.root.classList.toggle("hide", !!document.fullscreenElement);
     }
     hide() {
-      if (this.panel) return;
+      if (this.panel || this.radial) return;
       this.visible = false;
       this.root.classList.add("hide");
-      if (this.settled) this.unsettle();
-    }
-
-    settle() {
-      this.settled = true;
-      this.anchor = { ...this.mouse };
-      this.mv.x = this.mv.y = 0;
-      this.root.classList.add("settled");
-    }
-    unsettle() {
-      this.settled = false;
-      this.root.classList.remove("settled");
-      this.closeMenu();
-      this.lastMove = performance.now();
     }
 
     // ------------------------------------------------------------ 루프
@@ -306,108 +506,51 @@
       if (this.dead || !this.mouse) return;
       const dt = Math.min(0.033, (now - (this.last || now)) / 1000);
       this.last = now;
+      const still = now - this.lastMove;
       // 마우스가 멈추면 속도도 0 으로 가라앉는다
-      if (now - this.lastMove > 60) {
+      if (still > 60) {
         const d = Math.min(1, dt * 8);
         this.mv.x -= this.mv.x * d;
         this.mv.y -= this.mv.y * d;
       }
-      if (!this.settled && this.visible && now - this.lastMove > this.cfg.settleMs) this.settle();
-
-      const center = this.settled ? this.anchor : this.mouse;
-      const w = this.settled ? 0 : clamp((Math.hypot(this.mv.x, this.mv.y) - 60) / 450, 0, 1);
+      const w = clamp((Math.hypot(this.mv.x, this.mv.y) - 60) / 450, 0, 1);
       const s = this.size;
+      const idle = still > 900 && !this.radial;
       for (const pet of this.pets) {
-        const tg = this.targetFor(pet, center, w);
-        const k = this.settled ? 140 : pet.k;
-        const c = 2 * Math.sqrt(k) * 0.8;
+        const tg = this.targetFor(pet, w);
+        const k = tg.hold ? 0 : this.radial ? 170 : pet.k;
+        const c = tg.hold ? 18 : 2 * Math.sqrt(k) * 0.8; // 잡힐 땐 브레이크만
         let ax = (tg.x - pet.x) * k - pet.vx * c;
         let ay = (tg.y - pet.y) * k - pet.vy * c;
-        for (const o of this.pets) {
-          if (o === pet) continue;
-          const dx = pet.x - o.x;
-          const dy = pet.y - o.y;
-          const d = Math.hypot(dx, dy) || 1;
-          if (d < s * 0.85) {
-            ax += (dx / d) * (s * 0.85 - d) * 50;
-            ay += (dy / d) * (s * 0.85 - d) * 50;
+        if (!tg.hold) {
+          for (const o of this.pets) {
+            if (o === pet) continue;
+            const dx = pet.x - o.x;
+            const dy = pet.y - o.y;
+            const d = Math.hypot(dx, dy) || 1;
+            if (d < s * 0.85) {
+              ax += (dx / d) * (s * 0.85 - d) * 50;
+              ay += (dy / d) * (s * 0.85 - d) * 50;
+            }
           }
         }
         pet.vx += ax * dt;
         pet.vy += ay * dt;
         pet.x += pet.vx * dt;
         pet.y += pet.vy * dt;
-        const hover = !!(this.menu && this.menu.pet === pet);
-        pet.body.update({ t: now / 1000, dt, vx: pet.vx, vy: pet.vy, speed: Math.hypot(pet.vx, pet.vy), hover });
+        const happy = this.hot === pet || !!this.radial;
+        pet.body.update({ t: now / 1000, dt, vx: pet.vx, vy: pet.vy, speed: Math.hypot(pet.vx, pet.vy), hover: happy });
+        pet.el.classList.toggle("idle", idle);
         pet.el.style.transform = `translate(${pet.x.toFixed(1)}px,${pet.y.toFixed(1)}px)`;
       }
-      if (this.menu) this.placeMenu();
+      if (this.hint) {
+        const p = this.pets[0];
+        this.hint.el.style.left = clamp(p.x, 140, document.documentElement.clientWidth - 140) + "px";
+        this.hint.el.style.top = p.y - s - 10 + "px";
+        if (now > this.hint.until) this.dismissHint();
+      }
       // 숨쉬기·깜빡임 애니메이션 때문에 보이는 동안은 계속 돈다(펫 1~3마리라 가볍다)
       if (this.visible) this.wake();
-    }
-
-    // ------------------------------------------------------------ 메뉴
-    openMenu(pet) {
-      if (!this.settled || this.panel) return;
-      clearTimeout(this.menuT);
-      if (this.menu && this.menu.pet === pet) return;
-      this.closeMenu();
-      const el = h("div", { class: "menu", role: "menu" });
-      for (const item of this.cfg.crew.slice(0, D.maxCrew)) {
-        const hint = h("span", { class: "hint", text: item.action === "memo" && this.hasMemo ? "메모 있음 •" : hintFor(item) });
-        if (item.action === "memo" && this.hasMemo) hint.classList.add("has");
-        const dot = h("span", { class: "dot" });
-        dot.style.background = item.color;
-        const b = h("button", { role: "menuitem" }, dot, h("span", { class: "name", text: item.name || "기능" }), hint);
-        b.addEventListener("pointerdown", (e) => e.stopPropagation());
-        b.addEventListener("click", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const fn = ACTIONS[item.action];
-          this.closeMenu();
-          if (fn) fn(item, e, this, pet);
-        });
-        el.appendChild(b);
-      }
-      el.addEventListener("pointerenter", () => clearTimeout(this.menuT));
-      el.addEventListener("pointerleave", () => this.closeMenuSoon());
-      this.root.appendChild(el);
-      this.menu = { el, pet };
-      this.root.classList.add("active");
-      this.placeMenu();
-    }
-
-    placeMenu() {
-      const { el, pet } = this.menu;
-      const s = this.size;
-      const vw = document.documentElement.clientWidth;
-      const w = el.offsetWidth;
-      const hgt = el.offsetHeight;
-      let x = pet.x + s * 0.6 + 6;
-      if (x + w > vw - 8) x = pet.x - s * 0.6 - 6 - w;
-      const y = clamp(pet.y - s - 4, 8, innerHeight - hgt - 8);
-      el.style.left = Math.max(8, x) + "px";
-      el.style.top = y + "px";
-    }
-
-    closeMenuSoon() {
-      clearTimeout(this.menuT);
-      this.menuT = setTimeout(() => this.closeMenu(), 450);
-    }
-    closeMenu() {
-      clearTimeout(this.menuT);
-      if (!this.menu) return;
-      this.menu.el.remove();
-      this.menu = null;
-      if (!this.panel) this.root.classList.remove("active");
-    }
-
-    toast(pet, text) {
-      const t = h("div", { class: "toast", text });
-      t.style.left = pet.x + "px";
-      t.style.top = pet.y - this.size - 6 + "px";
-      this.root.appendChild(t);
-      setTimeout(() => t.remove(), 1300);
     }
 
     // ------------------------------------------------------------ 메모
@@ -426,7 +569,7 @@
       } else if (!(this.hasMemo && usesMemo) && badge) badge.remove();
     }
 
-    async openMemo(pet, item) {
+    async openMemo(at, item) {
       if (this.panel) return this.closeMemo();
       const key = memoKey();
       const got = await store.local.get(key);
@@ -442,9 +585,8 @@
       p.style.setProperty("--c", item.color);
       ta.value = (got[key] && got[key].text) || "";
       const vw = document.documentElement.clientWidth;
-      const s = this.size;
-      p.style.left = clamp(pet.x + s * 0.6 + 6, 8, vw - 308) + "px";
-      p.style.top = clamp(pet.y - s, 8, innerHeight - 250) + "px";
+      p.style.left = clamp(at.x - 150, 8, vw - 308) + "px";
+      p.style.top = clamp(at.y - 110, 8, innerHeight - 250) + "px";
       // 메모장에서 치는 키가 페이지 단축키(예: 유튜브 k, 깃허브 s)로 새지 않게
       for (const t of ["keydown", "keyup", "keypress"])
         p.addEventListener(t, (e) => {
@@ -478,14 +620,15 @@
       this.panel = null;
       pn.flush();
       pn.el.remove();
-      if (!this.menu) this.root.classList.remove("active");
+      if (!this.radial) this.root.classList.remove("active");
     }
 
     destroy() {
       this.dead = true;
       cancelAnimationFrame(this.raf);
+      clearTimeout(this.keyT);
       this.closeMemo();
-      this.closeMenu();
+      this.closeRadial();
       for (const [t, fn, o] of this.on) removeEventListener(t, fn, o);
       document.removeEventListener("mouseout", this.onLeave);
       document.removeEventListener("fullscreenchange", this.onFs);
@@ -516,7 +659,10 @@
       crew.destroy();
       crew = null;
     }
-    if (on) crew = new Crew(cfg, lastMouse, image);
+    if (on) {
+      crew = new Crew(cfg, lastMouse, image);
+      if (lastMouse) crew.maybeHint();
+    }
   }
 
   store.onChanged.addListener((changes, area) => {

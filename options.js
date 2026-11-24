@@ -244,8 +244,7 @@ async function renderMemos() {
 (async () => {
   state = await chrome.storage.sync.get(D.settings);
   $("#enabled").checked = state.enabled;
-  $("#settleMs").value = state.settleMs;
-  $("#settleOut").textContent = (state.settleMs / 1000).toFixed(2) + "초";
+  $("#menuKey").value = state.menuKey;
   $("#excluded").value = (state.excluded || []).join("\n");
   state.petColors = [...(state.petColors || D.settings.petColors)];
   skinImage = (await chrome.storage.local.get("skinImage")).skinImage || null;
@@ -259,10 +258,10 @@ async function renderMemos() {
   renderMemos();
 
   $("#enabled").addEventListener("change", (e) => ((state.enabled = e.target.checked), save()));
-  $("#settleMs").addEventListener("input", (e) => {
-    state.settleMs = +e.target.value;
-    $("#settleOut").textContent = (state.settleMs / 1000).toFixed(2) + "초";
-    save();
+  $("#menuKey").addEventListener("change", (e) => ((state.menuKey = e.target.value), save()));
+  $("#hintAgain").addEventListener("click", async () => {
+    await chrome.storage.local.remove("crewHintSeen");
+    flashSaved("다음에 페이지를 열면 안내가 다시 떠요");
   });
   $("#excluded").addEventListener("input", (e) => {
     state.excluded = e.target.value.split(/\s+/).map((s) => s.trim()).filter(Boolean);

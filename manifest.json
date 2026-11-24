@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Cursor Crew",
-  "version": "0.2.0",
-  "description": "작은 도트 펫이 마우스 옆을 따라다니다가, 멈춰서 호버하면 링크 열기·메모 같은 메뉴를 펼쳐 줍니다.",
+  "version": "0.3.0",
+  "description": "작은 도트 펫이 마우스 옆을 따라다니고, Alt를 누르고 있거나 펫을 클릭하면 링크 열기·메모 같은 원형 메뉴가 펼쳐집니다.",
   "permissions": ["storage"],
   "background": { "service_worker": "background.js" },
   "content_scripts": [

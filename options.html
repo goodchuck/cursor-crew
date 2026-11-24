@@ -35,14 +35,25 @@
 
     <section>
       <h2>기능 메뉴</h2>
-      <p class="help">마우스를 잠깐 멈추면 펫이 옆에 앉아요. 펫에 마우스를 올리거나 클릭하면 이 메뉴가 펼쳐져요. 링크는 <kbd>Shift</kbd>+클릭이면 지금 탭에서, <kbd>Ctrl</kbd>+클릭이면 뒤쪽 탭으로 열려요.</p>
+      <p class="help">원형 메뉴에 나오는 항목이에요(12시 방향부터 시계 방향). 링크는 <kbd>Shift</kbd>+클릭이면 지금 탭에서, <kbd>Ctrl</kbd>+클릭이면 뒤쪽 탭으로 열려요.</p>
       <div id="crew"></div>
       <button id="add" class="ghost">+ 메뉴 항목 추가</button>
     </section>
 
     <section>
-      <h2>움직임</h2>
-      <label class="row">멈춘 뒤 앉기까지 <input type="range" id="settleMs" min="200" max="1200" step="50" /> <output id="settleOut"></output></label>
+      <h2>메뉴 여는 법</h2>
+      <p class="help">이 키를 <b>누르고 있으면</b> 마우스 주변에 기능들이 원형으로 펼쳐져요. 원하는 쪽으로 마우스를 옮기고 키를 떼면 실행돼요. 아무것도 안 고르고 떼면 그냥 닫혀요. 펫을 직접 클릭해도 같은 메뉴가 열려요.</p>
+      <div class="row">
+        <label>메뉴 키
+          <select id="menuKey">
+            <option value="Alt">Alt</option>
+            <option value="Control">Ctrl</option>
+            <option value="Shift">Shift</option>
+            <option value="off">키로 열지 않기 (펫 클릭만)</option>
+          </select>
+        </label>
+        <button id="hintAgain" class="ghost">처음 안내 다시 보기</button>
+      </div>
     </section>
 
     <section>
