@@ -5,10 +5,9 @@ import type { MsgKey, T } from "@src/shared/i18n";
 /** 상태 문구는 글자 대신 키로 들고 있어서 언어를 바꿔도 다시 번역된다 */
 export type Msg = { key: MsgKey; vars?: Record<string, string | number>; kind?: "ok" | "err" };
 
-function Slot({ i, url, pixelated, fallbackToFirst, onFile, onClear, t }: { i: number; url: string | null; pixelated: boolean; fallbackToFirst: boolean; onFile: (i: number, f: File) => void; onClear: (i: number) => void; t: T }) {
+function Slot({ i, name, url, pixelated, fallbackToFirst, onFile, onClear, t }: { i: number; name: string; url: string | null; pixelated: boolean; fallbackToFirst: boolean; onFile: (i: number, f: File) => void; onClear: (i: number) => void; t: T }) {
   const input = useRef<HTMLInputElement>(null);
   const [drag, setDrag] = useState(false);
-  const n = i + 1;
   const onDrop = (e: DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -20,7 +19,7 @@ function Slot({ i, url, pixelated, fallbackToFirst, onFile, onClear, t }: { i: n
     <div
       role="button"
       tabIndex={0}
-      aria-label={url ? t("opt.imageChange", { n }) : t("opt.imagePick", { n })}
+      aria-label={url ? t("opt.imageChange", { name }) : t("opt.imagePick", { name })}
       onClick={() => input.current?.click()}
       onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), input.current?.click())}
       onDragOver={(e) => (e.preventDefault(), setDrag(true))}
@@ -34,7 +33,7 @@ function Slot({ i, url, pixelated, fallbackToFirst, onFile, onClear, t }: { i: n
       {url ? (
         <>
           <img src={url} alt="" className="size-14 object-contain" style={{ imageRendering: pixelated ? "pixelated" : "auto" }} />
-          <span>{t("opt.imagePet", { n })}</span>
+          <span className="max-w-full truncate">{t("opt.imagePet", { name })}</span>
           <button
             type="button"
             title={t("opt.imageRemove")}
@@ -48,7 +47,7 @@ function Slot({ i, url, pixelated, fallbackToFirst, onFile, onClear, t }: { i: n
       ) : (
         <>
           <span className="text-2xl leading-none">+</span>
-          <span>{t("opt.imagePet", { n })}</span>
+          <span className="max-w-full truncate">{t("opt.imagePet", { name })}</span>
           <span>{fallbackToFirst ? t("opt.imageSameAs1") : t("opt.imageDrop")}</span>
         </>
       )}
@@ -56,8 +55,8 @@ function Slot({ i, url, pixelated, fallbackToFirst, onFile, onClear, t }: { i: n
   );
 }
 
-export function ImageSlots(props: { count: number; images: (string | null)[]; pixelated: boolean; active: boolean; msg: Msg | null; onFile: (i: number, f: File) => void; onClear: (i: number) => void; onPixelated: (v: boolean) => void; t: T }) {
-  const { count, images, pixelated, active, msg, onFile, onClear, onPixelated, t } = props;
+export function ImageSlots(props: { names: string[]; images: (string | null)[]; pixelated: boolean; active: boolean; msg: Msg | null; onFile: (i: number, f: File) => void; onClear: (i: number) => void; onPixelated: (v: boolean) => void; t: T }) {
+  const { names, images, pixelated, active, msg, onFile, onClear, onPixelated, t } = props;
 
   // 칸 밖에 떨어뜨려도 브라우저가 파일을 열어 버리지 않게(펫 1 칸으로 받는다)
   const onFileRef = useRef(onFile);
@@ -84,8 +83,8 @@ export function ImageSlots(props: { count: number; images: (string | null)[]; pi
         <p className="mt-0.5 text-[13px] leading-relaxed text-zinc-500 dark:text-zinc-400">{t("opt.imageHelp")}</p>
       </div>
       <div className="grid grid-cols-3 gap-2">
-        {Array.from({ length: count }, (_, i) => (
-          <Slot key={i} i={i} url={images[i]} pixelated={pixelated} fallbackToFirst={i > 0 && !!images[0]} onFile={onFile} onClear={onClear} t={t} />
+        {names.map((name, i) => (
+          <Slot key={i} i={i} name={name} url={images[i]} pixelated={pixelated} fallbackToFirst={i > 0 && !!images[0]} onFile={onFile} onClear={onClear} t={t} />
         ))}
       </div>
       <label className="mt-2.5 flex cursor-pointer items-center gap-2 text-[13px]">

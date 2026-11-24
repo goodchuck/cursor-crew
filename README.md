@@ -1,17 +1,16 @@
 # Cursor Crew
 
-작은 도트 슬라임이 내 마우스 **살짝 옆·뒤**에서 통통 튀며 따라다니는 크롬 확장(MV3)입니다.
-**Alt를 누르고 있으면** 마우스 주변에 기능(자주 가는 링크, 이 페이지 메모, URL 복사, 맨 위로)이 원형으로 펼쳐지고, 원하는 쪽으로 마우스를 옮겨 Alt를 떼면 실행됩니다.
+작은 도트 슬라임들이 내 마우스 **살짝 옆·뒤**에서 통통 튀며 따라다니는 크롬 확장(MV3)입니다.
+**펫 한 마리가 기능 하나**(자주 가는 링크, 이 페이지 메모, URL 복사, 맨 위로)를 맡고, **<kbd>Alt</kbd>를 누른 채 펫을 클릭**하면 그 기능이 실행됩니다.
 
-평소엔 화면을 거의 가리지 않습니다. 기본 1마리, 36px, 이름표 없음. **펫은 클릭을 전혀 가로채지 않아서** 펫 위를 눌러도 아래 페이지가 눌립니다. 메뉴 키(기본 <kbd>Alt</kbd>)를 누르고 있을 때만 펫과 메뉴가 반응합니다.
+평소엔 화면을 거의 가리지 않습니다. 기본 3마리, 36px, 이름표 없음. **펫은 클릭을 전혀 가로채지 않아서** 펫 위를 눌러도 아래 페이지가 눌립니다.
 
 ```
-              ● GitHub
-                 ╎
-   ● 메모 ╌╌  ▄██▄  ╌╌ ● YouTube     ← Alt 누르고 있는 동안
-             █•  •█                    마우스를 → 로 옮기고 Alt 떼면 YouTube
-                 ╎
-              ● Gmail
+ ↖ (내 마우스)          Alt 를 누르고 있는 동안
+                        ┌ GitHub ┐       ┌ 메모 ┐
+   ▄▄  ▄▄  ▄▄            ▄▄  ▄▄  ▄▄       ← 펫이 멈추고 이름표가 뜸
+  █••█ █••█ █••█        █••█ █••█ █••█       그대로 펫을 클릭 = 실행
+                            └ YouTube ┘
 ```
 
 ## 로컬에서 설치하기
@@ -48,34 +47,34 @@ pnpm build
 
 ## 쓰는 법
 
-처음 설치하고 페이지에서 마우스를 움직이면 펫 위에 "Alt를 누르고 있으면 메뉴가 열려요 · 평소엔 클릭이 나를 통과해요" 안내가 한 번 뜹니다.
+처음 설치하고 페이지에서 마우스를 움직이면 펫 위에 "Alt를 누른 채 나를 클릭하면 실행돼요 · 평소엔 클릭이 나를 통과해요" 안내가 한 번 뜹니다.
 
-- **따라다니기**: 마우스를 움직이면 펫이 마우스 뒤쪽으로 처지며 통통 따라오고, 멈추면 마우스 오른쪽 아래(화면 끝이면 반대쪽)에 앉습니다. 오래 쉬고 있으면 머리 위가 가끔 반짝입니다.
+- **따라다니기**: 마우스를 움직이면 펫들이 줄지어 마우스 뒤쪽으로 처지며 통통 따라오고, 멈추면 마우스 오른쪽 아래(화면 끝이면 반대쪽)에 나란히 앉습니다. 오래 쉬고 있으면 머리 위가 가끔 반짝입니다.
 - **평소에는 투명 인간**: 펫은 클릭·호버를 가로채지 않습니다(`pointer-events: none`). 펫 위를 클릭하면 그 아래 링크·버튼이 눌리고, 커서 모양도 바뀌지 않습니다.
-- **메뉴 키를 누르고 있기 (주된 방법)**
-  1. 메뉴 키(기본 <kbd>Alt</kbd>)를 누르고 있으면 마우스 주변에 기능들이 원형으로 펼쳐집니다(12시 방향부터 시계 방향). 누르는 동안 펫은 제자리에 멈춥니다.
-  2. 마우스를 원하는 쪽으로 조금 옮기면 그 항목이 골라지고, 가운데에 무엇을 할지 보입니다.
-  3. 키를 떼면 실행됩니다. 키를 누른 채 항목을 클릭해도 됩니다.
-  4. 아무것도 안 고르고 떼거나, 다른 키와 함께 누르거나(예: <kbd>Alt</kbd>+<kbd>←</kbd>), 짧게 톡 치기만 하면 그냥 닫힙니다.
-- **메뉴 고정하기**: 키를 누른 채 **펫을 클릭**하면 메뉴가 펫 옆에 고정됩니다. 이제 키를 떼고 천천히 항목을 클릭해 고르면 됩니다. <kbd>Esc</kbd>나 메뉴 바깥 클릭으로 닫힙니다(바깥 클릭은 페이지에도 그대로 전달됨).
-- **브라우저 기본 동작과 겹치지 않게**: 키를 누른 채 펫이나 메뉴를 클릭할 때만 기본 동작(예: <kbd>Alt</kbd>+클릭 = 링크 다운로드, <kbd>Ctrl</kbd>+클릭 = 새 탭)을 막습니다. 펫이 아닌 곳을 클릭하면 페이지 동작은 그대로입니다.
-- **메뉴 키 바꾸기**: 설정 창 **메뉴 여는 법**에서 <kbd>Alt</kbd> · <kbd>Ctrl</kbd> · <kbd>Shift</kbd> · <kbd>Alt</kbd>+<kbd>Shift</kbd> 중에 고릅니다. <kbd>Alt</kbd>+<kbd>Shift</kbd>는 윈도우 입력 언어 전환 단축키와 겹칠 수 있습니다.
-- 링크: 그냥 = 새 탭(바로 옆), <kbd>Shift</kbd>를 같이 = 지금 탭, <kbd>Ctrl</kbd>/<kbd>⌘</kbd>를 같이 = 뒤쪽 탭. 결과는 짧은 말풍선으로 알려 줍니다.
-- 메모: 작은 메모장이 뜨고 페이지(주소의 경로까지)별로 자동 저장. 메모가 있는 페이지에선 펫 머리 위에 보라색 점. 메모장에서 치는 키는 페이지 단축키(유튜브 `k`, 깃허브 `s` 등)로 새지 않습니다.
+- **쓰기: <kbd>Alt</kbd>를 누른 채 펫 클릭**
+  1. <kbd>Alt</kbd>(설정에서 바꿀 수 있음)를 누르고 있으면 펫들이 제자리에 멈추고, 펫마다 기능 이름표가 뜹니다. 이때만 펫이 클릭됩니다.
+  2. 키를 누른 채 펫을 클릭하면 그 펫의 기능이 바로 실행되고, 펫 위에 짧은 말풍선으로 결과를 알려 줍니다.
+  3. 키를 떼면 아무것도 실행되지 않고 원래대로 돌아갑니다.
+  4. 키를 누른 채 다른 키를 치면(예: <kbd>Alt</kbd>+<kbd>←</kbd>) 단축키로 보고 바로 풀립니다.
+- **브라우저 기본 동작과 겹치지 않게**: 키를 누른 채 펫을 클릭할 때만 기본 동작(예: <kbd>Alt</kbd>+클릭 = 링크 다운로드, <kbd>Ctrl</kbd>+클릭 = 새 탭)을 막습니다. 펫이 아닌 곳을 클릭하면 페이지 동작은 그대로입니다. 펫이 화면에 없거나 꺼져 있으면 키에 손대지 않습니다.
+- **누르고 있을 키 바꾸기**: 설정 창 **쓰는 법**에서 <kbd>Alt</kbd> · <kbd>Ctrl</kbd> · <kbd>Shift</kbd> · <kbd>Alt</kbd>+<kbd>Shift</kbd> 중에 고릅니다. <kbd>Alt</kbd>+<kbd>Shift</kbd>는 윈도우 입력 언어 전환 단축키와 겹칠 수 있습니다.
+- 링크: 그냥 = 새 탭(바로 옆), <kbd>Shift</kbd>를 같이 = 지금 탭, <kbd>Ctrl</kbd>/<kbd>⌘</kbd>를 같이 = 뒤쪽 탭. 단, 그 키가 누르고 있을 키에 들어 있으면 이 구분은 쓰지 않습니다.
+- 메모: 메모 펫을 클릭하면 작은 메모장이 뜨고 페이지(주소의 경로까지)별로 자동 저장됩니다. 메모가 있는 페이지에선 메모 펫 머리 위에 보라색 점. 메모장에서 치는 키는 페이지 단축키(유튜브 `k`, 깃허브 `s` 등)로 새지 않습니다.
 - 페이지 입력창에 글을 쓰기 시작하면 펫이 거의 투명해지고, 마우스를 움직이면 돌아옵니다. 창 밖으로 나가거나 전체화면이면 숨습니다.
 - **켜기/끄기**: 설정 창 맨 위 스위치 또는 <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd>. 꺼지면 툴바 아이콘에 `OFF` 배지가 붙습니다. 단축키는 `chrome://extensions/shortcuts`에서 바꿀 수 있습니다.
-- **다크모드**: 설정 창 **화면·언어**에서 시스템 따라가기(기본) · 라이트 · 다크. 설정 창뿐 아니라 페이지 위에 뜨는 원형 메뉴, 메모장, 안내 말풍선도 따라 바뀝니다.
+- **다크모드**: 설정 창 **화면·언어**에서 시스템 따라가기(기본) · 라이트 · 다크. 설정 창뿐 아니라 이름표, 메모장, 안내 말풍선도 따라 바뀝니다.
 - **언어**: 자동(브라우저 언어, 기본) · 한국어 · English. 확장 이름·설명은 크롬 언어를 따릅니다.
 
-참고: 윈도우 크롬에서 <kbd>Alt</kbd>만 눌렀다 떼면 원래 크롬 메뉴 버튼으로 포커스가 가는데, 메뉴 키가 <kbd>Alt</kbd>를 포함하면 펫이 켜진 페이지에서는 이 동작을 막아 둡니다. 불편하면 메뉴 키를 <kbd>Ctrl</kbd>이나 <kbd>Shift</kbd>로 바꾸세요.
+참고: 윈도우 크롬에서 <kbd>Alt</kbd>만 눌렀다 떼면 원래 크롬 메뉴 버튼으로 포커스가 가는데, 펫이 보이는 페이지에서는 이 동작을 막아 둡니다(사이트에 따라 완전히 막히지 않을 수 있음). 불편하면 누르고 있을 키를 <kbd>Ctrl</kbd>이나 <kbd>Shift</kbd>로 바꾸세요.
 
 ### How to use (English)
 
-- The pet follows your mouse and **never catches clicks**: clicking on it clicks whatever is underneath.
-- **Hold the menu key** (Alt by default; Ctrl, Shift or Alt+Shift in settings): your actions spread in a circle around the mouse and the pet stops moving. Move toward an item and **release the key** to run it. Releasing without choosing, a quick tap, or pressing another key with it (e.g. Alt+←) just closes the menu.
-- **Pin the menu**: while holding the key, **click the pet**. The menu stays next to it after you release the key; click an item, press Esc, or click elsewhere to close it.
-- Browser defaults such as Alt+click (download) or Ctrl+click (new tab) are blocked only when you click the pet or the menu while holding the key. Everywhere else the page behaves as usual.
-- Links: click = new tab next to this one, with Shift = this tab, with Ctrl/⌘ = background tab. The memo is saved per page and marked with a purple dot on the pet.
+- Small pixel pets follow your mouse. **Each pet does one thing** (a link, a page memo, copy URL, back to top), and they **never catch clicks**: clicking on a pet clicks whatever is underneath.
+- **Hold Alt and click a pet** to run its action. While you hold the key the pets stop and show name tags; that's the only time they can be clicked.
+- **Releasing the key does nothing**: it just puts the pets back. Pressing another key with it (e.g. Alt+←) cancels right away.
+- The key can be Alt, Ctrl, Shift or Alt+Shift (settings → **How to use**). Alt+Shift may clash with the Windows input language switch.
+- Browser defaults such as Alt+click (download) or Ctrl+click (new tab) are blocked only when you click a pet while holding the key. If no pet is on screen or the extension is off, the key is left alone.
+- Links open in a new tab next to this one; add Shift for this tab or Ctrl/⌘ for a background tab, when that key isn't part of the key you hold. The memo is saved per page and marked with a purple dot on the memo pet.
 - On/off: the switch at the top of the settings window (toolbar icon) or Alt+Shift+C. Theme (system/light/dark) and language (auto/Korean/English) are under **Display & language**.
 
 ## 설정 창
@@ -84,10 +83,10 @@ pnpm build
 
 - **맨 위 스위치**: 켜기/끄기
 
-- **모양**: 스킨(슬라임 · 커서 · 내 이미지·GIF, 움직이는 미리보기), 개수(1~3), 크기(24~64px), 평소 투명도, 펫별 색
+- **쓰는 법**: 누르고 있을 키(Alt · Ctrl · Shift · Alt+Shift), 처음 안내 다시 보기
+- **펫과 기능**: 한 줄이 펫 한 마리(최대 6마리). 펫 색 · 이름표 · 기능 · 링크 주소, 순서 바꾸기, 추가·삭제
+- **모양**: 스킨(슬라임 · 커서 · 내 이미지·GIF, 움직이는 미리보기), 크기(24~64px), 평소 투명도
 - **내 이미지·GIF로 바꾸기**: 펫마다 칸이 하나씩 있어요. 파일을 칸에 끌어다 놓거나 클릭해서 고르면 바로 그 그림으로 바뀝니다(스킨도 자동으로 '내 이미지·GIF'로). 자세한 건 아래 [내 GIF로 바꾸기](#내-gif로-바꾸기).
-- **메뉴 여는 법**: 메뉴 키(Alt · Ctrl · Shift · Alt+Shift), 처음 안내 다시 보기
-- **기능 메뉴**: 원형 메뉴에 나올 항목별 색 · 이름 · 기능 · 링크 주소, 순서 바꾸기, 추가(최대 8개)·삭제
 - **화면·언어**: 테마(시스템·라이트·다크), 언어(자동·한국어·English)
 - 펫을 띄우지 않을 사이트, 저장된 메모 목록
 
@@ -100,7 +99,7 @@ pnpm build
 
 - **움직이는 이미지는 그대로**: GIF, 움직이는 WebP, 움직이는 PNG(APNG)는 변환하지 않고 원본 그대로 저장해서 페이지에서도 움직입니다. 정지 이미지(PNG·JPG·WebP)는 128px보다 크면 줄여서 저장합니다.
 - **한 장 2MB까지**: 넘으면 설정 창에 안내가 뜹니다. GIF는 가로세로나 프레임 수를 줄이면 많이 작아집니다. 여러 장을 넣어도 막히지 않게 `unlimitedStorage` 권한을 씁니다(설치 때 따로 경고가 뜨지 않는 권한).
-- **펫마다 다른 그림**: 펫이 2~3마리면 칸도 2~3개. 비워 둔 칸은 펫 1의 그림을 같이 씁니다. ✕로 지울 수 있고, 다 지우면 슬라임으로 돌아갑니다.
+- **펫마다 다른 그림**: 펫(기능) 수만큼 칸이 있고 칸에 펫 이름이 적혀 있습니다. 비워 둔 칸은 첫 번째로 올린 그림을 같이 씁니다. 펫 순서를 바꾸거나 지우면 그림도 같이 따라갑니다. ✕로 지울 수 있고, 다 지우면 슬라임으로 돌아갑니다.
 - **크기와 선명도**: 정해 둔 크기(24~64px) 상자 안에 비율을 유지해서 맞추고, 발밑을 기준으로 섭니다. 도트(픽셀아트) GIF가 흐려 보이면 **도트(픽셀아트) 선명하게**를 켭니다. 64px 이하의 작은 그림을 올리면 자동으로 켜집니다.
 - 시험용 GIF: `test/sample-pet.gif`(24×24 도트 유령, 4프레임).
 

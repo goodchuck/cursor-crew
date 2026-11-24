@@ -2,7 +2,7 @@
 
 export type ActionId = "link" | "memo" | "copy" | "top";
 export type SkinId = "slime" | "cursor" | "image";
-/** 누르고 있는 동안 펫·원형 메뉴가 반응하는 키(조합) */
+/** 누르고 있는 동안만 펫이 멈추고 클릭되는 키(조합) */
 export type MenuKey = "Alt" | "Control" | "Shift" | "AltShift";
 export const MENU_KEYS: MenuKey[] = ["Alt", "Control", "Shift", "AltShift"];
 
@@ -16,7 +16,7 @@ export const MENU_KEY_SPEC: Record<MenuKey, { alt: boolean; ctrl: boolean; shift
 export type ThemePref = "system" | "light" | "dark";
 export type LangPref = "auto" | "ko" | "en";
 
-/** 원형 메뉴의 항목 하나. name 이 비어 있으면 기능 이름(언어에 맞춰)을 보여 준다. */
+/** 펫 한 마리 = 기능 하나. color 는 펫 색, name 이 비어 있으면 기능 이름(언어에 맞춰)을 보여 준다. */
 export interface MenuItem {
   name: string;
   color: string;
@@ -27,23 +27,20 @@ export interface MenuItem {
 /** chrome.storage.sync 에 저장되는 설정 */
 export interface Settings {
   enabled: boolean;
-  /** 누르고 있는 동안 원형 메뉴가 펼쳐지고 펫을 클릭할 수 있는 키. 평소에는 펫이 클릭을 가로채지 않는다 */
+  /** 누르고 있는 동안만 펫이 멈추고 이름표가 뜨며 클릭할 수 있는 키. 평소에는 펫이 클릭을 가로채지 않는다 */
   menuKey: MenuKey;
   /** 펫을 띄우지 않을 사이트(hostname, 하위 도메인 포함) */
   excluded: string[];
   skin: SkinId;
-  /** 화면에 보이는 펫 수(1~3) */
-  pets: number;
   /** 펫 크기(px) */
   size: number;
-  /** 평소 투명도(메뉴가 열리면 1) */
+  /** 평소 투명도(메뉴 키를 누르면 1) */
   opacity: number;
-  petColors: string[];
   /** 내 이미지 스킨: 도트 그림을 흐리지 않고 또렷하게(image-rendering: pixelated) */
   imagePixelated: boolean;
   theme: ThemePref;
   lang: LangPref;
-  /** 원형 메뉴 항목(12시 방향부터 시계 방향) */
+  /** 펫들(펫 한 마리 = 기능 하나, 최대 MAX_CREW) */
   crew: MenuItem[];
 }
 
@@ -52,18 +49,16 @@ export const DEFAULTS: Settings = {
   menuKey: "Alt",
   excluded: [],
   skin: "slime",
-  pets: 1,
   size: 36,
   opacity: 0.9,
-  petColors: ["#5BD16A", "#5AB8F0", "#F28AC0"],
   imagePixelated: false,
   theme: "system",
   lang: "auto",
+  // 기본은 3마리: 화면을 덜 가리게
   crew: [
-    { name: "GitHub", color: "#0D99FF", action: "link", url: "https://github.com" },
-    { name: "YouTube", color: "#F24E1E", action: "link", url: "https://www.youtube.com" },
-    { name: "Gmail", color: "#0ACF83", action: "link", url: "https://mail.google.com" },
-    { name: "", color: "#A259FF", action: "memo" },
+    { name: "GitHub", color: "#5AB8F0", action: "link", url: "https://github.com" },
+    { name: "YouTube", color: "#F2766B", action: "link", url: "https://www.youtube.com" },
+    { name: "", color: "#5BD16A", action: "memo" },
   ],
 };
 
@@ -71,13 +66,14 @@ export const DEFAULTS: Settings = {
 export const ACTION_IDS: ActionId[] = ["link", "memo", "copy", "top"];
 export const ACTION_NEEDS_URL: Record<ActionId, boolean> = { link: true, memo: false, copy: false, top: false };
 
-export const COLORS = ["#0D99FF", "#F24E1E", "#0ACF83", "#A259FF", "#FF7262", "#E8A100", "#E8467C", "#14AE5C", "#9747FF", "#00B5CE"];
-export const MAX_CREW = 8;
-export const MAX_PETS = 3;
+/** 새 펫에 줄 색(아직 안 쓴 것부터) */
+export const COLORS = ["#5AB8F0", "#F2766B", "#5BD16A", "#B48CF2", "#F2B84B", "#F28AC0", "#4CC9C0", "#8C9BF2"];
+/** 펫(=기능) 최대 수 */
+export const MAX_CREW = 6;
 export const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 
-/** 펫마다 올린 이미지(chrome.storage.local). skinImage 는 v0.4 이전 키 */
-export const IMAGE_KEYS = ["skinImage0", "skinImage1", "skinImage2"] as const;
+/** 펫마다 올린 이미지(chrome.storage.local, 펫 순서와 같은 번호). skinImage 는 v0.4 이전 키 */
+export const IMAGE_KEYS = Array.from({ length: MAX_CREW }, (_, i) => "skinImage" + i);
 const LEGACY_IMAGE_KEY = "skinImage";
 
 export async function loadSettings(): Promise<Settings> {
@@ -94,13 +90,24 @@ export function saveSettings(patch: Partial<Settings>): Promise<void> {
 
 export async function loadImages(): Promise<(string | null)[]> {
   const got = (await chrome.storage.local.get([...IMAGE_KEYS, LEGACY_IMAGE_KEY])) as Record<string, string | undefined>;
-  return [got.skinImage0 || got[LEGACY_IMAGE_KEY] || null, got.skinImage1 || null, got.skinImage2 || null];
+  return IMAGE_KEYS.map((k, i) => got[k] || (i === 0 ? got[LEGACY_IMAGE_KEY] : null) || null);
 }
 
 export async function saveImage(i: number, url: string | null): Promise<void> {
   if (url) await chrome.storage.local.set({ [IMAGE_KEYS[i]]: url });
   else await chrome.storage.local.remove(IMAGE_KEYS[i]);
   await chrome.storage.local.remove(LEGACY_IMAGE_KEY);
+}
+
+/** 펫 순서가 바뀌면 이미지도 같이 옮긴다. order[j] = 새 j번째 펫의 예전 번호(새 펫은 -1) */
+export async function reorderImages(images: (string | null)[], order: number[]): Promise<(string | null)[]> {
+  const next = IMAGE_KEYS.map((_, j) => (order[j] != null && order[j] >= 0 ? images[order[j]] : null) ?? null);
+  const set: Record<string, string> = {};
+  const remove: string[] = [];
+  next.forEach((url, j) => (url ? (set[IMAGE_KEYS[j]] = url) : remove.push(IMAGE_KEYS[j])));
+  if (Object.keys(set).length) await chrome.storage.local.set(set);
+  if (remove.length) await chrome.storage.local.remove(remove);
+  return next;
 }
 
 export const isImageKey = (k: string) => k.startsWith("skinImage");

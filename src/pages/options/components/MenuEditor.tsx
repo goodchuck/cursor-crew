@@ -1,4 +1,4 @@
-// 원형 메뉴 항목 편집(색·이름·기능·링크·순서·추가·삭제)
+// '펫과 기능' 편집: 한 줄이 펫 한 마리(색·이름·기능·링크·순서·추가·삭제)
 import { ACTION_IDS, ACTION_NEEDS_URL, COLORS, MAX_CREW, type ActionId, type MenuItem } from "@src/shared/settings";
 import type { T } from "@src/shared/i18n";
 import { btnCls, inputCls, Select } from "./ui";
@@ -14,19 +14,23 @@ function validUrl(u?: string): boolean {
   }
 }
 
-export function MenuEditor({ items, onChange, t }: { items: MenuItem[]; onChange: (items: MenuItem[]) => void; t: T }) {
-  const set = (i: number, patch: Partial<MenuItem>) => onChange(items.map((m, j) => (j === i ? { ...m, ...patch } : m)));
+/** onChange(items, order): order[j] = 새 j번째 항목의 예전 번호(새로 추가한 항목은 -1). 펫별 이미지를 같이 옮기는 데 쓴다 */
+export function MenuEditor({ items, onChange, t }: { items: MenuItem[]; onChange: (items: MenuItem[], order: number[]) => void; t: T }) {
+  const same = () => items.map((_, j) => j);
+  const set = (i: number, patch: Partial<MenuItem>) => onChange(items.map((m, j) => (j === i ? { ...m, ...patch } : m)), same());
   const move = (i: number, d: number) => {
     const j = i + d;
     if (j < 0 || j >= items.length) return;
     const next = [...items];
+    const order = same();
     [next[i], next[j]] = [next[j], next[i]];
-    onChange(next);
+    [order[i], order[j]] = [order[j], order[i]];
+    onChange(next, order);
   };
   const add = () => {
     const used = new Set(items.map((m) => m.color.toUpperCase()));
     const color = COLORS.find((c) => !used.has(c.toUpperCase())) || COLORS[items.length % COLORS.length];
-    onChange([...items, { name: t("opt.newLink"), color, action: "link", url: "" }]);
+    onChange([...items, { name: t("opt.newLink"), color, action: "link", url: "" }], [...same(), -1]);
   };
   const toolBtn = "cursor-pointer rounded-md px-2 py-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900 disabled:cursor-default disabled:opacity-30 dark:hover:bg-zinc-800 dark:hover:text-zinc-100";
 
@@ -46,7 +50,7 @@ export function MenuEditor({ items, onChange, t }: { items: MenuItem[]; onChange
               <button type="button" className={toolBtn} title={t("opt.down")} aria-label={t("opt.down")} disabled={i === items.length - 1} onClick={() => move(i, 1)}>
                 ↓
               </button>
-              <button type="button" className={toolBtn} title={t("opt.remove")} aria-label={t("opt.remove")} onClick={() => onChange(items.filter((_, j) => j !== i))}>
+              <button type="button" className={toolBtn} title={t("opt.remove")} aria-label={t("opt.remove")} disabled={items.length <= 1} onClick={() => onChange(items.filter((_, j) => j !== i), same().filter((j) => j !== i))}>
                 ✕
               </button>
             </div>

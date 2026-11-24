@@ -1,8 +1,9 @@
 // 설정 창. 툴바 아이콘을 누르면 별도 창(540×720)으로 열린다. 바꾸면 바로 저장되고 열린 탭의 펫에도 반영된다.
 import { useEffect, useState } from "react";
-import { HINT_SEEN_KEY, MAX_PETS, saveImage, type LangPref, type MenuKey, type Settings, type ThemePref } from "@src/shared/settings";
+import { HINT_SEEN_KEY, reorderImages, saveImage, type LangPref, type MenuItem, type MenuKey, type Settings, type ThemePref } from "@src/shared/settings";
 import { resolveLang, type MsgKey } from "@src/shared/i18n";
 import { getSkin } from "@src/shared/skins";
+import { itemName } from "@src/pages/content/actions";
 import { useDocumentLang, useHashJump, useImages, useMemos, useSettings, useT, useThemeClass } from "./hooks";
 import { prepareImage } from "./image";
 import { Range, Section, Select, Switch, btnCls, inputCls } from "./components/ui";
@@ -45,7 +46,7 @@ export default function Options() {
     const patch: Partial<Settings> = { skin: "image" }; // 이미지를 올리면 바로 그 모양으로
     if (Math.max(r.width, r.height) <= 64) patch.imagePixelated = true; // 작은 그림은 대개 도트
     update(patch);
-    setImgMsg({ key: r.animated ? "opt.imgDoneAnimated" : "opt.imgDone", vars: { n: i + 1, w: r.width, h: r.height }, kind: "ok" });
+    setImgMsg({ key: r.animated ? "opt.imgDoneAnimated" : "opt.imgDone", vars: { name: names[i], w: r.width, h: r.height }, kind: "ok" });
   };
 
   const onClear = async (i: number) => {
@@ -53,10 +54,18 @@ export default function Options() {
     const next = images.map((u, j) => (j === i ? null : u));
     setImages(next);
     if (!next.some(Boolean) && s.skin === "image") update({ skin: "slime" });
-    setImgMsg({ key: "opt.imgRemoved", vars: { n: i + 1 } });
+    setImgMsg({ key: "opt.imgRemoved", vars: { name: names[i] } });
+  };
+
+  // 펫 순서를 바꾸거나 지우면 펫마다 올린 이미지도 같이 옮긴다
+  const onCrewChange = async (crew: MenuItem[], order: number[]) => {
+    update({ crew });
+    const moved = order.length !== s.crew.length || order.some((o, j) => o !== j);
+    if (moved && images.some(Boolean)) setImages(await reorderImages(images, order));
   };
 
   const firstImage = images.find(Boolean) || null;
+  const names = s.crew.map((item) => itemName(item, t));
   const keyOptions: [MenuKey, string][] = [
     ["Alt", "Alt"],
     ["Control", "Ctrl"],
@@ -87,39 +96,6 @@ export default function Options() {
         </a>
       </p>
 
-      <Section title={t("opt.look")} help={t("opt.lookHelp")}>
-        <SkinPicker
-          value={s.skin}
-          onChange={(skin) => {
-            update({ skin });
-            if (getSkin(skin).needsImage && !firstImage) setImgMsg({ key: "opt.imgUpload" });
-          }}
-          color={s.petColors[0]}
-          image={firstImage}
-          pixelated={s.imagePixelated}
-          t={t}
-        />
-        <ImageSlots count={s.pets} images={images} pixelated={s.imagePixelated} active={s.skin === "image"} msg={imgMsg} onFile={onFile} onClear={onClear} onPixelated={(imagePixelated) => update({ imagePixelated })} t={t} />
-        <div className="grid gap-2.5">
-          <Range label={t("opt.count")} value={s.pets} min={1} max={MAX_PETS} step={1} onChange={(pets) => update({ pets })} display={t("opt.countValue", { n: s.pets })} />
-          <Range label={t("opt.size")} value={s.size} min={24} max={64} step={2} onChange={(size) => update({ size })} display={s.size + "px"} />
-          <Range label={t("opt.opacity")} value={s.opacity} min={0.3} max={1} step={0.05} onChange={(opacity) => update({ opacity })} display={Math.round(s.opacity * 100) + "%"} />
-          <div className="flex items-center gap-3">
-            <span className="w-20 shrink-0">{t("opt.colors")}</span>
-            {Array.from({ length: s.pets }, (_, i) => (
-              <input
-                key={i}
-                type="color"
-                aria-label={t("opt.petColor", { n: i + 1 })}
-                value={s.petColors[i] || "#5BD16A"}
-                onChange={(e) => update({ petColors: s.petColors.map((c, j) => (j === i ? e.target.value : c)) })}
-                className="h-7 w-8 cursor-pointer border-0 bg-transparent p-0"
-              />
-            ))}
-          </div>
-        </div>
-      </Section>
-
       <Section title={t("opt.openMenu")} help={t("opt.openMenuHelp")}>
         <div className="flex flex-wrap items-center gap-2">
           <label className="flex items-center gap-2 whitespace-nowrap">
@@ -140,7 +116,26 @@ export default function Options() {
       </Section>
 
       <Section title={t("opt.menu")} help={t("opt.menuHelp")}>
-        <MenuEditor items={s.crew} onChange={(crew) => update({ crew })} t={t} />
+        <MenuEditor items={s.crew} onChange={onCrewChange} t={t} />
+      </Section>
+
+      <Section title={t("opt.look")} help={t("opt.lookHelp")}>
+        <SkinPicker
+          value={s.skin}
+          onChange={(skin) => {
+            update({ skin });
+            if (getSkin(skin).needsImage && !firstImage) setImgMsg({ key: "opt.imgUpload" });
+          }}
+          color={s.crew[0]?.color || "#5BD16A"}
+          image={firstImage}
+          pixelated={s.imagePixelated}
+          t={t}
+        />
+        <ImageSlots names={names} images={images} pixelated={s.imagePixelated} active={s.skin === "image"} msg={imgMsg} onFile={onFile} onClear={onClear} onPixelated={(imagePixelated) => update({ imagePixelated })} t={t} />
+        <div className="grid gap-2.5">
+          <Range label={t("opt.size")} value={s.size} min={24} max={64} step={2} onChange={(size) => update({ size })} display={s.size + "px"} />
+          <Range label={t("opt.opacity")} value={s.opacity} min={0.3} max={1} step={0.05} onChange={(opacity) => update({ opacity })} display={Math.round(s.opacity * 100) + "%"} />
+        </div>
       </Section>
 
       <Section title={t("opt.display")}>

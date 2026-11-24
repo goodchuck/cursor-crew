@@ -5,13 +5,13 @@ export const CSS = `
 :host{all:initial}
 .root{
   --surface:#fff; --text:#1d1d1f; --muted:#8a8a90; --hover:#f0f0f4; --edge:rgba(0,0,0,.06); --divider:#eee;
-  --tip:#1d1d1f; --tip-text:#fff; --ring:rgba(29,29,31,.18); --shadow:rgba(0,0,0,.2);
+  --tip:#1d1d1f; --tip-text:#fff; --shadow:rgba(0,0,0,.2);
   position:fixed;inset:0;pointer-events:none;opacity:var(--op,1);transition:opacity .25s ease;color-scheme:light}
 .root.dark{
   --surface:#26262b; --text:#f2f2f5; --muted:#9d9da6; --hover:#34343b; --edge:rgba(255,255,255,.1); --divider:#3a3a41;
-  --tip:#f2f2f5; --tip-text:#1d1d1f; --ring:rgba(255,255,255,.3); --shadow:rgba(0,0,0,.5);
+  --tip:#f2f2f5; --tip-text:#1d1d1f; --shadow:rgba(0,0,0,.5);
   color-scheme:dark}
-.root.active{opacity:1}
+.root.active,.root.armed{opacity:1}
 .root.dim{opacity:.12}
 .root.hide{opacity:0}
 
@@ -21,6 +21,16 @@ export const CSS = `
 .hit{position:absolute;border-radius:45%;pointer-events:none}
 .root.armed:not(.dim):not(.hide) .hit{pointer-events:auto;cursor:pointer}
 .root.armed .pet.hot>:first-child{filter:drop-shadow(0 0 3px var(--glow)) drop-shadow(0 0 1px var(--glow))}
+/* 이름표: 메뉴 키를 누르고 있는 동안만. 짧게 톡 친 키에는 깜빡이지 않게 살짝 늦게 나타난다 */
+.label{position:absolute;left:0;display:flex;align-items:center;gap:5px;max-width:110px;transform:translateX(-50%);
+  background:var(--surface);color:var(--text);font:600 11.5px/1 ${FONT};padding:4px 7px 4px 6px;border-radius:999px;white-space:nowrap;
+  box-shadow:0 2px 8px var(--shadow),0 0 0 1px var(--edge);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .12s,visibility 0s .12s}
+.label span:last-child{overflow:hidden;text-overflow:ellipsis}
+.label.above{top:calc(var(--s) * -1 - 26px)}
+.label.below{top:8px}
+.ldot{width:7px;height:7px;border-radius:50%;flex:none}
+.root.armed:not(.dim):not(.hide) .label{opacity:1;visibility:visible;transition:opacity .12s .08s,visibility 0s .08s}
+.root.armed .pet.hot .label{background:var(--glow);color:#fff}
 .badge{position:absolute;width:7px;height:7px;border-radius:50%;background:#A259FF;box-shadow:0 0 0 1.5px var(--surface)}
 .spark{position:absolute;color:#fff;font:700 var(--sp,12px)/1 ${FONT};text-shadow:0 0 2px var(--glow),0 0 4px var(--glow);opacity:0;pointer-events:none}
 .pet.idle .spark{animation:twinkle 3.2s ease-in-out infinite}
@@ -31,19 +41,6 @@ export const CSS = `
 .bubble kbd{font:700 11px/1 ${FONT};background:var(--tip-text);color:var(--tip);border-radius:4px;padding:2px 5px;margin:0 1px}
 .toast{position:absolute;transform:translate(-50%,-100%);background:var(--tip);color:var(--tip-text);font:600 12px/1 ${FONT};padding:6px 9px;border-radius:8px;
   white-space:nowrap;box-shadow:0 4px 12px var(--shadow);pointer-events:none}
-.ring{position:absolute;border-radius:50%;border:2px dashed var(--ring);transform:translate(-50%,-50%);pointer-events:none;animation:fade .15s ease-out}
-.center{position:absolute;transform:translate(-50%,-50%);font:600 11.5px/1 ${FONT};color:var(--text);background:var(--surface);
-  padding:5px 8px;border-radius:999px;box-shadow:0 2px 8px var(--shadow);white-space:nowrap;pointer-events:none}
-.chip{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;gap:6px;padding:7px 11px 7px 9px;border-radius:999px;
-  background:var(--surface);color:var(--text);font:600 13px/1 ${FONT};white-space:nowrap;box-shadow:0 4px 14px var(--shadow),0 0 0 1px var(--edge);
-  pointer-events:auto;cursor:pointer;animation:fly .18s cubic-bezier(.2,.8,.3,1.2) both;transition:background .1s,color .1s,box-shadow .1s}
-.chip .dot{width:9px;height:9px;border-radius:50%;flex:none}
-.chip.sel{background:var(--c);color:#fff;box-shadow:0 6px 18px var(--shadow)}
-.chip.sel .dot{background:#fff!important}
-.chip .has{width:6px;height:6px;border-radius:50%;background:#A259FF}
-.chip.sel .has{background:#fff}
-@keyframes fly{from{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.3)}}
-@keyframes fade{from{opacity:0}}
 .panel{position:absolute;width:300px;pointer-events:auto;background:var(--surface);color:var(--text);border-radius:12px;
   box-shadow:0 12px 40px var(--shadow),0 0 0 1px var(--edge);overflow:hidden;font:13px/1.45 ${FONT}}
 .panel .ph{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--divider)}

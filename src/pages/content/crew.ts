@@ -1,16 +1,16 @@
 /*
- * Crew: 펫(1~3마리)이 마우스를 따라다니고, 원형 메뉴·메모장·첫 안내를 띄운다.
+ * Crew: 펫들이 마우스를 따라다닌다. 펫 한 마리 = 기능 하나(설정 창의 '펫과 기능' 목록 순서).
  *
  * 평소에는 펫이 클릭을 전혀 가로채지 않는다(pointer-events: none). 펫 위를 눌러도 아래 페이지가 눌린다.
- * 메뉴 키(기본 Alt, 설정에서 Ctrl·Shift·Alt+Shift)를 누르고 있는 동안만 펫·메뉴가 반응한다.
- *  1) 키를 누르고 있기 → 마우스 주변에 기능들이 원형으로 펼쳐진다.
- *     마우스를 그쪽으로 옮기고 키를 떼면(또는 칩을 클릭하면) 실행. 아무것도 안 고르고 떼면 그냥 닫힘.
- *  2) 키를 누른 채 펫을 클릭 → 메뉴가 펫 옆에 고정되어 키를 떼고 골라도 된다.
- * 마우스가 펫에 천천히 다가가면 펫은 도망가지 않고 멈춘다.
+ * 메뉴 키(기본 Alt, 설정에서 Ctrl·Shift·Alt+Shift)를 누르고 있는 동안만:
+ *   - 펫이 제자리에 멈추고, 펫마다 기능 이름표가 뜬다.
+ *   - 펫을 클릭하면 그 펫의 기능이 바로 실행된다.
+ * 키를 떼면 아무것도 실행하지 않고 원래대로 돌아간다(keyup 에서는 어떤 기능도 실행하지 않는다).
+ * 메뉴 키를 누른 채 다른 키를 치면(단축키) 즉시 해제한다.
  *
  * 겉모습은 shared/skins.ts, 기능은 actions.ts, 글자는 shared/i18n.ts 가 맡는다.
  */
-import { MAX_CREW, MAX_PETS, HINT_SEEN_KEY, DEFAULTS, MENU_KEY_SPEC, memoKey, type MenuItem, type MenuKey, type Settings, type Memo } from "@src/shared/settings";
+import { MAX_CREW, HINT_SEEN_KEY, DEFAULTS, MENU_KEY_SPEC, memoKey, type MenuItem, type MenuKey, type Settings, type Memo } from "@src/shared/settings";
 import { KEY_LABEL, type T } from "@src/shared/i18n";
 import { getSkin, type Skin, type SkinBody } from "@src/shared/skins";
 import { ACTIONS, itemHint, itemName, type ActionHost, type Mods, type Point } from "./actions";
@@ -33,6 +33,7 @@ function h<K extends keyof HTMLElementTagNameMap>(tag: K, props?: Record<string,
 }
 
 interface Pet {
+  item: MenuItem;
   el: HTMLDivElement;
   body: SkinBody;
   hit: HTMLDivElement;
@@ -44,22 +45,6 @@ interface Pet {
   vy: number;
   k: number;
   held?: boolean;
-}
-interface Slot {
-  item: MenuItem;
-  chip: HTMLDivElement;
-  a: number;
-}
-interface Radial {
-  mode: "key" | "click";
-  cx: number;
-  cy: number;
-  el: HTMLDivElement;
-  center: HTMLDivElement;
-  slots: Slot[];
-  sel: Slot | null;
-  from: Point;
-  moved?: boolean;
 }
 
 export interface CrewOptions {
@@ -81,7 +66,6 @@ export class Crew implements ActionHost {
   private lastMove = performance.now();
   private lastEv = 0;
   private visible: boolean;
-  private radial: Radial | null = null;
   private panel: { el: HTMLDivElement; flush: () => void } | null = null;
   private hint: { el: HTMLDivElement; until: number } | null = null;
   private hasMemo = false;
@@ -89,7 +73,6 @@ export class Crew implements ActionHost {
   private host: HTMLDivElement;
   private root: HTMLDivElement;
   private pets: Pet[] = [];
-  private keyT = 0;
   private raf = 0;
   private last = 0;
   private dead = false;
@@ -115,13 +98,11 @@ export class Crew implements ActionHost {
 
     let skin: Skin = getSkin(cfg.skin);
     if (skin.needsImage && !images?.some(Boolean)) skin = getSkin("slime");
-    const n = clamp(Math.round(cfg.pets) || 1, 1, MAX_PETS);
-    const colors = cfg.petColors?.length ? cfg.petColors : DEFAULTS.petColors;
     // 펫마다 자기 이미지, 비어 있으면 첫 번째로 올린 이미지를 같이 쓴다
     const imageFor = (i: number) => (images ? images[i] || images.find(Boolean) || null : null);
-    for (let i = 0; i < n; i++) this.pets.push(this.makePet(skin, colors[i % colors.length], i, imageFor(i)));
+    cfg.crew.slice(0, MAX_CREW).forEach((item, i) => this.pets.push(this.makePet(skin, item, i, imageFor(i))));
     document.documentElement.appendChild(this.host);
-    this.refreshMemo();
+    void this.refreshMemo();
 
     // 페이지 이벤트
     const listen = <E extends Event>(target: EventTarget, type: string, fn: (e: E) => void, opts?: AddEventListenerOptions) => {
@@ -134,11 +115,10 @@ export class Crew implements ActionHost {
     listen<KeyboardEvent>(window, "keyup", (e) => this.onKeyUp(e), { capture: true });
     listen(window, "blur", () => {
       this.disarm();
-      this.closeRadial();
       this.hide();
     });
     listen<MouseEvent>(document, "mouseout", (e) => {
-      if (!e.relatedTarget && !this.radial) this.hide();
+      if (!e.relatedTarget) this.hide();
     });
     listen(document, "fullscreenchange", () => this.root.classList.toggle("hide", !!document.fullscreenElement || !this.visible));
 
@@ -149,18 +129,24 @@ export class Crew implements ActionHost {
     this.root.classList.toggle("dark", dark);
   }
 
-  private makePet(skin: Skin, color: string, i: number, image: string | null): Pet {
+  private makePet(skin: Skin, item: MenuItem, i: number, image: string | null): Pet {
     const s = this.size;
     const t = this.t;
+    const color = item.color || DEFAULTS.crew[0].color;
     const body = skin.create(color, s, { image, pixelated: !!this.cfg.imagePixelated });
-    const hit = h("div", { class: "hit", title: t("pet.title") });
+    const hit = h("div", { class: "hit", title: itemHint(item, t) });
     Object.assign(hit.style, { left: -s * 0.55 + "px", top: -s * 1.05 + "px", width: s * 1.1 + "px", height: s * 1.1 + "px" });
     const spark = h("div", { class: "spark", text: "✦" });
     Object.assign(spark.style, { left: s * 0.3 + "px", top: -s * 1.15 + "px" });
-    const el = h("div", { class: "pet" }, body.el as Node, hit, spark);
+    // 이름표: 메뉴 키를 누르고 있을 때만 보인다. 이웃 펫과 겹치지 않게 위·아래로 번갈아 둔다
+    const dot = h("span", { class: "ldot" });
+    dot.style.background = color;
+    const label = h("div", { class: "label " + (i % 2 ? "below" : "above") }, dot, h("span", { text: itemName(item, t) }));
+    label.style.setProperty("--s", s + "px");
+    const el = h("div", { class: "pet" }, body.el as Node, hit, spark, label);
     el.style.setProperty("--glow", color);
     el.style.setProperty("--sp", Math.round(s * 0.36) + "px");
-    const pet: Pet = { el, body, hit, color, i, x: 0, y: 0, vx: 0, vy: 0, k: i ? 60 : 85 };
+    const pet: Pet = { item, el, body, hit, color, i, x: 0, y: 0, vx: 0, vy: 0, k: i ? 60 : 85 };
     if (this.mouse) Object.assign(pet, this.restSpot(i, this.mouse));
     hit.addEventListener("pointerenter", () => {
       this.hot = pet;
@@ -180,9 +166,8 @@ export class Crew implements ActionHost {
     hit.addEventListener("auxclick", swallow);
     hit.addEventListener("click", (e) => {
       swallow(e);
-      const pinned = this.radial?.mode === "click";
-      this.closeRadial();
-      if (!pinned) this.openRadial("click", { x: pet.x, y: pet.y - s * 0.5 });
+      if (!this.armed) return;
+      this.run(pet, e);
     });
     this.root.appendChild(el);
     return pet;
@@ -202,9 +187,9 @@ export class Crew implements ActionHost {
   private targetFor(pet: Pet, w: number): Point & { hold?: boolean } {
     const s = this.size;
     const mouse = this.mouse!;
-    // 메뉴가 열려 있는 동안(메뉴 키를 누르고 있는 동안)은 펫이 제자리에 멈춘다 → 키를 누른 채 펫을 클릭할 수 있게
-    if (this.radial || this.armed) return { x: pet.x, y: pet.y, hold: true };
-    // 마우스가 천천히 다가오거나 바로 위에 오면 도망가지 않고 그 자리에 멈춘다(잡을 수 있게).
+    // 메뉴 키를 누르고 있는 동안은 제자리에 멈춘다(클릭할 수 있게)
+    if (this.armed) return { x: pet.x, y: pet.y, hold: true };
+    // 마우스가 천천히 다가오거나 바로 위에 오면 도망가지 않고 그 자리에 멈춘다.
     // 빠르게 지나가는 건 이동으로 보고 그냥 따라간다. 충분히 멀어지면 다시 따라간다.
     const dx = pet.x - mouse.x;
     const dy = pet.y - s * 0.5 - mouse.y;
@@ -242,16 +227,14 @@ export class Crew implements ActionHost {
     if (first) for (const pet of this.pets) Object.assign(pet, this.restSpot(pet.i, p));
     this.show();
     this.root.classList.remove("dim");
-    if (this.radial) this.pickByPointer();
-    if (first) this.maybeHint();
+    if (first) void this.maybeHint();
     this.wake();
   }
 
-  // 펫·메뉴가 아닌 곳을 누르면 페이지 기본 동작은 그대로 두고, 열린 메뉴·메모장만 닫는다
+  // 펫이 아닌 곳을 누르면 페이지 기본 동작은 그대로 두고, 열린 메모장만 닫는다
   private onPageDown(e: PointerEvent) {
     if (e.composedPath().includes(this.host)) return;
     if (this.panel) this.closeMemo();
-    if (this.radial) this.closeRadial();
   }
 
   // ------------------------------------------------------------ 키
@@ -268,16 +251,20 @@ export class Crew implements ActionHost {
     const sp = this.spec;
     return e.altKey === sp.alt && e.ctrlKey === sp.ctrl && e.shiftKey === sp.shift && !e.metaKey;
   }
+  /** 펫이 화면에 보여서 키에 반응해도 되는 상태인지 */
+  private get present() {
+    return this.visible && !document.fullscreenElement && this.pets.length > 0;
+  }
 
   private arm() {
     this.armed = true;
     this.root.classList.add("armed");
+    this.dismissHint();
   }
   private disarm() {
+    if (!this.armed) return;
     this.armed = false;
     this.root.classList.remove("armed");
-    clearTimeout(this.keyT);
-    this.keyT = 0;
     if (this.hot) {
       this.hot.el.classList.remove("hot");
       this.hot = null;
@@ -287,155 +274,35 @@ export class Crew implements ActionHost {
   private onKeyDown(e: KeyboardEvent) {
     if (e.composedPath().includes(this.host)) return; // 메모장 안에서 치는 키
     if (this.isSpecKey(e.key)) {
+      if (!this.present) return; // 펫이 안 보이면 키에 손대지 않는다
       // 윈도우에서 Alt 만 눌렀다 뗄 때 크롬 메뉴로 포커스가 가는 것 방지
       if (e.key === "Alt") e.preventDefault();
       if (e.repeat || this.armed || !this.comboHeld(e)) return;
       const typing = isEditable(e.target as Element) || isEditable(document.activeElement);
-      if (!this.visible || this.panel || (typing && !this.spec.alt)) return;
+      if (this.panel || (typing && !this.spec.alt)) return;
       this.arm();
-      // 단축키의 일부로 잠깐 누르는 경우를 피하려고 아주 살짝 기다린다
-      this.keyT = window.setTimeout(() => {
-        this.keyT = 0;
-        if (this.armed && this.mouse && !this.radial) this.openRadial("key", { ...this.mouse });
-      }, 110);
       return;
     }
-    // 메뉴 키를 누른 채 다른 키를 치면(예: Alt+←, Ctrl+C) 단축키로 보고 접는다
-    if (this.armed) {
-      this.disarm();
-      if (this.radial?.mode === "key") this.closeRadial();
-    }
-    if (e.key === "Escape") {
-      if (this.radial) return this.closeRadial();
-      if (this.panel) return this.closeMemo();
-    }
+    // 메뉴 키를 누른 채 다른 키를 치면(예: Alt+←, Ctrl+C) 단축키로 보고 바로 해제
+    this.disarm();
+    if (e.key === "Escape" && this.panel) return this.closeMemo();
     // 페이지에서 글을 쓰는 중이면 방해하지 않게 흐려진다
-    if (isEditable(e.target as Element) || isEditable(document.activeElement)) {
-      this.root.classList.add("dim");
-      this.closeRadial();
-    }
+    if (isEditable(e.target as Element) || isEditable(document.activeElement)) this.root.classList.add("dim");
   }
 
+  // 키를 떼면 원래대로만 돌아간다. 여기서는 어떤 기능도 실행하지 않는다.
   private onKeyUp(e: KeyboardEvent) {
     if (!this.isSpecKey(e.key)) return;
-    if (e.key === "Alt" && this.spec.alt) e.preventDefault();
-    if (!this.armed) return;
-    const quickTap = !!this.keyT;
+    if (e.key === "Alt" && this.present) e.preventDefault();
     this.disarm();
-    if (quickTap) return;
-    // 키 모드 메뉴는 키를 떼면 실행(고른 게 없으면 닫기). 펫을 클릭해 고정한 메뉴는 그대로 둔다
-    const r = this.radial;
-    if (r?.mode === "key") {
-      const sel = r.sel;
-      this.closeRadial();
-      if (sel) this.run(sel.item, e, { x: r.cx, y: r.cy });
-    }
   }
 
-  // ------------------------------------------------------------ 원형 메뉴
-  private openRadial(mode: Radial["mode"], at: Point) {
-    if (this.radial || this.panel) return;
-    this.dismissHint();
-    const items = this.cfg.crew.slice(0, MAX_CREW);
-    if (!items.length) return;
-    const n = items.length;
-    const R = clamp(48 + n * 11, 70, 130);
-    const vw = document.documentElement.clientWidth;
-    // 화면 끝이면 원이 잘리지 않게 가운데를 안쪽으로 민다
-    const cx = clamp(at.x, R + 70, vw - R - 70);
-    const cy = clamp(at.y, R + 30, innerHeight - R - 30);
-    const box = h("div", { class: "radial" });
-    const ring = h("div", { class: "ring" });
-    Object.assign(ring.style, { left: cx + "px", top: cy + "px", width: R * 2 + "px", height: R * 2 + "px" });
-    const center = h("div", { class: "center" });
-    Object.assign(center.style, { left: cx + "px", top: cy + "px" });
-    box.append(ring);
-    const slots = items.map((item, i): Slot => {
-      const a = -Math.PI / 2 + (i * 2 * Math.PI) / n; // 12시 방향부터 시계 방향
-      const x = cx + Math.cos(a) * R;
-      const y = cy + Math.sin(a) * R;
-      const dot = h("span", { class: "dot" });
-      dot.style.background = item.color;
-      const chip = h("div", { class: "chip", role: "menuitem" }, dot, h("span", { text: itemName(item, this.t) }));
-      if (item.action === "memo" && this.hasMemo) chip.appendChild(h("span", { class: "has", title: this.t("memo.exists") }));
-      chip.style.setProperty("--c", item.color);
-      chip.style.setProperty("--dx", (cx - x).toFixed(0) + "px");
-      chip.style.setProperty("--dy", (cy - y).toFixed(0) + "px");
-      chip.style.animationDelay = i * 18 + "ms";
-      Object.assign(chip.style, { left: x + "px", top: y + "px" });
-      const slot: Slot = { item, chip, a };
-      // 칩이 가운데(마우스 밑)에서 튀어나올 때 저절로 골라지지 않게, 마우스를 움직인 뒤에만 호버로 고른다
-      chip.addEventListener("pointerenter", () => this.radial?.moved && this.select(slot));
-      for (const type of ["pointerdown", "mousedown", "auxclick"])
-        chip.addEventListener(type, (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        });
-      chip.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        this.closeRadial();
-        this.run(item, e, { x: cx, y: cy });
-      });
-      box.appendChild(chip);
-      return slot;
-    });
-    box.appendChild(center);
-    this.root.appendChild(box);
-    this.root.classList.add("active");
-    this.radial = { mode, cx, cy, el: box, center, slots, sel: null, from: { ...(this.mouse || at) } };
-    this.select(null);
-    this.wake();
-  }
-
-  /** 키 모드: 메뉴를 연 자리에서 마우스를 옮긴 방향으로 고른다 */
-  private pickByPointer() {
-    const r = this.radial;
-    if (!r || !this.mouse) return;
-    const dx = this.mouse.x - r.from.x;
-    const dy = this.mouse.y - r.from.y;
-    if (Math.hypot(dx, dy) > 6) r.moved = true;
-    if (r.mode !== "key") return;
-    if (Math.hypot(dx, dy) < 18) return this.select(null);
-    const a = Math.atan2(dy, dx);
-    let best: Slot | null = null;
-    let bestD = Infinity;
-    for (const s of r.slots) {
-      const d = Math.abs(Math.atan2(Math.sin(a - s.a), Math.cos(a - s.a)));
-      if (d < bestD) {
-        best = s;
-        bestD = d;
-      }
-    }
-    this.select(best);
-  }
-
-  private select(slot: Slot | null) {
-    const r = this.radial;
-    if (!r) return;
-    const t = this.t;
-    r.sel = slot;
-    for (const s of r.slots) s.chip.classList.toggle("sel", s === slot);
-    r.center.textContent = slot
-      ? slot.item.action === "memo" && this.hasMemo
-        ? t("radial.memoOpen")
-        : itemHint(slot.item, t)
-      : r.mode === "key"
-        ? t("radial.pickKey", { key: KEY_LABEL[this.key] })
-        : t("radial.pickClick");
-  }
-
-  private closeRadial() {
-    const r = this.radial;
-    if (!r) return;
-    this.radial = null;
-    r.el.remove();
-    if (!this.panel) this.root.classList.remove("active");
-  }
-
-  private run(item: MenuItem, mods: Mods, at: Point) {
-    const fn = ACTIONS[item.action];
-    if (fn) void fn(item, mods, this, at);
+  /** 펫의 기능 실행. 메뉴 키에 들어 있지 않은 Shift·Ctrl 만 링크 여는 위치를 바꾸는 데 쓴다 */
+  private run(pet: Pet, e: MouseEvent) {
+    const sp = this.spec;
+    const mods: Mods = { shiftKey: e.shiftKey && !sp.shift, ctrlKey: e.ctrlKey && !sp.ctrl, metaKey: e.metaKey };
+    const fn = ACTIONS[pet.item.action];
+    if (fn) void fn(pet.item, mods, this, { x: pet.x, y: pet.y - this.size });
   }
 
   // ------------------------------------------------------------ 처음 안내
@@ -460,7 +327,7 @@ export class Crew implements ActionHost {
   toast(at: Point, text: string) {
     const el = h("div", { class: "toast", text });
     el.style.left = at.x + "px";
-    el.style.top = at.y - 16 + "px";
+    el.style.top = at.y - 6 + "px";
     this.root.appendChild(el);
     setTimeout(() => el.remove(), 1300);
   }
@@ -472,9 +339,10 @@ export class Crew implements ActionHost {
     this.root.classList.toggle("hide", !!document.fullscreenElement);
   }
   private hide() {
-    if (this.panel || this.radial) return;
+    if (this.panel) return;
     this.visible = false;
     this.root.classList.add("hide");
+    this.disarm();
   }
 
   // ------------------------------------------------------------ 루프
@@ -496,11 +364,11 @@ export class Crew implements ActionHost {
     }
     const w = clamp((Math.hypot(this.mv.x, this.mv.y) - 60) / 450, 0, 1);
     const s = this.size;
-    const idle = still > 900 && !this.radial;
+    const idle = still > 900 && !this.armed;
     for (const pet of this.pets) {
       const tg = this.targetFor(pet, w);
-      const k = tg.hold ? 0 : this.radial ? 170 : pet.k;
-      const c = tg.hold ? 18 : 2 * Math.sqrt(k) * 0.8; // 잡힐 땐 브레이크만
+      const k = tg.hold ? 0 : pet.k;
+      const c = tg.hold ? 18 : 2 * Math.sqrt(k) * 0.8; // 멈출 땐 브레이크만
       let ax = (tg.x - pet.x) * k - pet.vx * c;
       let ay = (tg.y - pet.y) * k - pet.vy * c;
       // 서로 겹치지 않게 밀어낸다(멈춰 있는 펫끼리도)
@@ -518,8 +386,7 @@ export class Crew implements ActionHost {
       pet.vy += ay * dt;
       pet.x += pet.vx * dt;
       pet.y += pet.vy * dt;
-      const happy = this.hot === pet || !!this.radial;
-      pet.body.update({ t: now / 1000, dt, vx: pet.vx, vy: pet.vy, speed: Math.hypot(pet.vx, pet.vy), hover: happy });
+      pet.body.update({ t: now / 1000, dt, vx: pet.vx, vy: pet.vy, speed: Math.hypot(pet.vx, pet.vy), hover: this.hot === pet });
       pet.el.classList.toggle("idle", idle);
       pet.el.style.transform = `translate(${pet.x.toFixed(1)}px,${pet.y.toFixed(1)}px)`;
     }
@@ -529,7 +396,7 @@ export class Crew implements ActionHost {
       this.hint.el.style.top = p.y - s - 10 + "px";
       if (now > this.hint.until) this.dismissHint();
     }
-    // 숨쉬기·깜빡임 애니메이션 때문에 보이는 동안은 계속 돈다(펫 1~3마리라 가볍다)
+    // 숨쉬기·깜빡임 애니메이션 때문에 보이는 동안은 계속 돈다(펫 몇 마리라 가볍다)
     if (this.visible) this.wake();
   }
 
@@ -539,15 +406,17 @@ export class Crew implements ActionHost {
     const got = await chrome.storage.local.get(key);
     const memo = got[key] as Memo | undefined;
     this.hasMemo = !!memo?.text?.trim();
-    const usesMemo = this.cfg.crew.some((c) => c.action === "memo");
-    const pet = this.pets[0];
-    let badge = pet.el.querySelector(".badge");
-    if (this.hasMemo && usesMemo && !badge) {
-      badge = h("div", { class: "badge", title: this.t("memo.exists") });
-      (badge as HTMLElement).style.left = this.size * 0.32 + "px";
-      (badge as HTMLElement).style.top = -this.size * 0.95 + "px";
-      pet.el.appendChild(badge);
-    } else if (!(this.hasMemo && usesMemo) && badge) badge.remove();
+    // 메모 기능을 가진 펫 머리 위에 보라색 점
+    for (const pet of this.pets) {
+      if (pet.item.action !== "memo") continue;
+      let badge = pet.el.querySelector<HTMLElement>(".badge");
+      if (this.hasMemo && !badge) {
+        badge = h("div", { class: "badge", title: this.t("memo.exists") });
+        badge.style.left = this.size * 0.32 + "px";
+        badge.style.top = -this.size * 0.95 + "px";
+        pet.el.appendChild(badge);
+      } else if (!this.hasMemo && badge) badge.remove();
+    }
   }
 
   async openMemo(at: Point, item: MenuItem) {
@@ -571,7 +440,7 @@ export class Crew implements ActionHost {
     ta.value = memo?.text || "";
     const vw = document.documentElement.clientWidth;
     p.style.left = clamp(at.x - 150, 8, vw - 308) + "px";
-    p.style.top = clamp(at.y - 110, 8, innerHeight - 250) + "px";
+    p.style.top = clamp(at.y - 230, 8, innerHeight - 250) + "px";
     // 메모장에서 치는 키가 페이지 단축키(예: 유튜브 k, 깃허브 s)로 새지 않게
     for (const type of ["keydown", "keyup", "keypress"])
       p.addEventListener(type, (e) => {
@@ -596,6 +465,7 @@ export class Crew implements ActionHost {
     this.root.appendChild(p);
     this.root.classList.add("active");
     this.panel = { el: p, flush: () => (clearTimeout(timer), void save()) };
+    this.disarm();
     ta.focus();
   }
 
@@ -605,15 +475,13 @@ export class Crew implements ActionHost {
     this.panel = null;
     pn.flush();
     pn.el.remove();
-    if (!this.radial) this.root.classList.remove("active");
+    this.root.classList.remove("active");
   }
 
   destroy() {
     this.dead = true;
     cancelAnimationFrame(this.raf);
-    clearTimeout(this.keyT);
     this.closeMemo();
-    this.closeRadial();
     for (const off of this.off) off();
     this.host.remove();
   }

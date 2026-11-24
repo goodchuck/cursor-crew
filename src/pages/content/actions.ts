@@ -1,4 +1,4 @@
-// 원형 메뉴 항목이 하는 일. 새 기능: 여기 함수 + shared/settings.ts 의 ACTION_IDS + i18n 의 action.<id>
+// 펫이 하는 일(펫 한 마리 = 기능 하나). 새 기능: 여기 함수 + shared/settings.ts 의 ACTION_IDS + i18n 의 action.<id>
 import type { ActionId, MenuItem } from "@src/shared/settings";
 import type { T } from "@src/shared/i18n";
 
