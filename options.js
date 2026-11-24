@@ -243,7 +243,12 @@ async function renderMemos() {
 // ------------------------------------------------------------ 시작
 (async () => {
   state = await chrome.storage.sync.get(D.settings);
-  $("#enabled").checked = state.enabled;
+  const showEnabled = () => {
+    $("#enabled").checked = state.enabled;
+    $("#enabledText").textContent = state.enabled ? "켜짐" : "꺼짐";
+    $(".toggle").classList.toggle("off", !state.enabled);
+  };
+  showEnabled();
   $("#menuKey").value = state.menuKey;
   $("#excluded").value = (state.excluded || []).join("\n");
   state.petColors = [...(state.petColors || D.settings.petColors)];
@@ -257,7 +262,11 @@ async function renderMemos() {
   renderCrew();
   renderMemos();
 
-  $("#enabled").addEventListener("change", (e) => ((state.enabled = e.target.checked), save()));
+  $("#enabled").addEventListener("change", (e) => {
+    state.enabled = e.target.checked;
+    showEnabled();
+    save();
+  });
   $("#menuKey").addEventListener("change", (e) => ((state.menuKey = e.target.value), save()));
   $("#hintAgain").addEventListener("click", async () => {
     await chrome.storage.local.remove("crewHintSeen");
@@ -276,8 +285,16 @@ async function renderMemos() {
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === "sync" && changes.enabled) {
       state.enabled = changes.enabled.newValue;
-      $("#enabled").checked = state.enabled;
+      showEnabled();
     }
     if (area === "local") renderMemos();
   });
 })();
+
+// 펫 메모장의 "모든 메모 보기"로 열리면 #memos 로 바로 이동
+function jumpToHash() {
+  const el = location.hash && document.getElementById(location.hash.slice(1));
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+addEventListener("hashchange", jumpToHash);
+setTimeout(jumpToHash, 300);

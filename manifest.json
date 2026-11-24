@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Cursor Crew",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "작은 도트 펫이 마우스 옆을 따라다니고, Alt를 누르고 있거나 펫을 클릭하면 링크 열기·메모 같은 원형 메뉴가 펼쳐집니다.",
   "permissions": ["storage"],
   "background": { "service_worker": "background.js" },
@@ -13,11 +13,10 @@
     }
   ],
   "action": {
-    "default_title": "Cursor Crew 켜기/끄기 (Alt+Shift+C)",
+    "default_title": "Cursor Crew 설정 (켜기/끄기: Alt+Shift+C)",
     "default_icon": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" }
   },
   "icons": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" },
-  "options_page": "options.html",
   "commands": {
     "toggle-crew": {
       "suggested_key": { "default": "Alt+Shift+C" },

@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Cursor Crew 설정</title>
 <link rel="stylesheet" href="options.css" />
 </head>
@@ -10,12 +11,13 @@
     <header>
       <h1>Cursor Crew</h1>
       <span id="saved" aria-live="polite"></span>
+      <label class="toggle" title="켜기/끄기 (Alt+Shift+C)">
+        <span id="enabledText">켜짐</span>
+        <input type="checkbox" id="enabled" role="switch" />
+        <i aria-hidden="true"></i>
+      </label>
     </header>
-
-    <section>
-      <label class="switch"><input type="checkbox" id="enabled" /> <span>Cursor Crew 켜기</span></label>
-      <p class="help">툴바 아이콘 클릭이나 <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd>로도 켜고 끌 수 있어요. <a href="#" id="shortcuts">단축키 바꾸기</a></p>
-    </section>
+    <p class="help top">이 창은 툴바 아이콘으로 열려요. 켜고 끄기는 위 스위치나 <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd>. <a href="#" id="shortcuts">단축키 바꾸기</a></p>
 
     <section>
       <h2>모양</h2>

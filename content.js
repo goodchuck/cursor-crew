@@ -24,7 +24,7 @@
   // item: 메뉴 항목 설정, mods: {shiftKey, ctrlKey, metaKey}, crew: Crew, at: 결과를 보여 줄 위치 {x, y}
   const ACTIONS = {
     link(item, mods, crew, at) {
-      if (!item.url) return crew.toast(at, "URL이 없어요 · 옵션에서 설정");
+      if (!item.url) return crew.toast(at, "URL이 없어요 · 툴바 아이콘 → 설정");
       chrome.runtime.sendMessage({ type: "crew:open", url: item.url, sameTab: !!mods.shiftKey, background: !!(mods.ctrlKey || mods.metaKey) }, (res) => {
         if (chrome.runtime.lastError || !res || !res.ok) crew.toast(at, "열 수 없는 주소");
       });
@@ -607,7 +607,7 @@
         timer = setTimeout(save, 350);
       });
       p.querySelector(".x").addEventListener("click", () => this.closeMemo());
-      p.querySelector(".all").addEventListener("click", () => chrome.runtime.sendMessage({ type: "crew:options" }));
+      p.querySelector(".all").addEventListener("click", () => chrome.runtime.sendMessage({ type: "crew:options", hash: "memos" }));
       this.root.appendChild(p);
       this.root.classList.add("active");
       this.panel = { el: p, flush: () => (clearTimeout(timer), save()) };

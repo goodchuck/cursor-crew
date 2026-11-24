@@ -1,4 +1,4 @@
-// 켜기·끄기(아이콘 클릭, 단축키), 배지 표시, 콘텐츠 스크립트 대신 탭 열기.
+// 아이콘 클릭 → 설정 창, 단축키 → 켜기·끄기, 배지 표시, 콘텐츠 스크립트 대신 탭 열기.
 importScripts("defaults.js");
 
 const D = globalThis.CrewDefaults;
@@ -11,7 +11,7 @@ async function updateBadge(enabled) {
   if (enabled === undefined) enabled = (await getSettings()).enabled;
   await chrome.action.setBadgeText({ text: enabled ? "" : "OFF" });
   await chrome.action.setBadgeBackgroundColor({ color: "#6B6B6B" });
-  await chrome.action.setTitle({ title: `Cursor Crew ${enabled ? "켜짐" : "꺼짐"} (클릭 또는 Alt+Shift+C로 전환)` });
+  await chrome.action.setTitle({ title: `Cursor Crew ${enabled ? "켜짐" : "꺼짐"} · 클릭하면 설정 창 (켜기/끄기: Alt+Shift+C)` });
 }
 
 async function toggle() {
@@ -29,7 +29,39 @@ chrome.runtime.onInstalled.addListener(async () => {
 });
 chrome.runtime.onStartup.addListener(() => updateBadge());
 
-chrome.action.onClicked.addListener(toggle);
+// ---------------------------------------------------------------- 설정 창
+// 웹 탭이 아니라 작은 별도 창(popup)으로 연다. 이미 열려 있으면 새로 만들지 않고 앞으로 가져온다.
+const DASHBOARD = "options.html";
+const DASH_SIZE = { width: 540, height: 720 };
+
+async function findDashboardWindow() {
+  const base = chrome.runtime.getURL(DASHBOARD);
+  // getContexts 는 권한 없이 확장 자신의 페이지를 찾을 수 있다(Chrome 116+)
+  if (chrome.runtime.getContexts) {
+    const ctx = await chrome.runtime.getContexts({ contextTypes: ["TAB"] });
+    const hit = ctx.find((c) => c.documentUrl && c.documentUrl.startsWith(base));
+    if (hit && hit.windowId >= 0) return hit.windowId;
+  }
+  const wins = await chrome.windows.getAll({ populate: true });
+  const win = wins.find((w) => (w.tabs || []).some((t) => (t.url || t.pendingUrl || "").startsWith(base)));
+  return win ? win.id : null;
+}
+
+async function openDashboard(hash) {
+  const url = chrome.runtime.getURL(DASHBOARD) + (hash ? "#" + hash : "");
+  const id = await findDashboardWindow();
+  if (id != null) {
+    await chrome.windows.update(id, { focused: true });
+    if (hash) {
+      const [tab] = await chrome.tabs.query({ windowId: id });
+      if (tab) await chrome.tabs.update(tab.id, { url });
+    }
+    return;
+  }
+  await chrome.windows.create({ url, type: "popup", ...DASH_SIZE });
+}
+
+chrome.action.onClicked.addListener(() => openDashboard());
 chrome.commands.onCommand.addListener((cmd) => {
   if (cmd === "toggle-crew") toggle();
 });
@@ -69,6 +101,6 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
     return true;
   }
   if (msg.type === "crew:options") {
-    chrome.runtime.openOptionsPage();
+    openDashboard(msg.hash);
   }
 });
