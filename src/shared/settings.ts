@@ -69,7 +69,7 @@ export const ACTION_NEEDS_URL: Record<ActionId, boolean> = { link: true, memo: f
 /** 새 펫에 줄 색(아직 안 쓴 것부터) */
 export const COLORS = ["#5AB8F0", "#F2766B", "#5BD16A", "#B48CF2", "#F2B84B", "#F28AC0", "#4CC9C0", "#8C9BF2"];
 /** 펫(=기능) 최대 수 */
-export const MAX_CREW = 6;
+export const MAX_CREW = 3; // 화면을 덜 가리도록 3마리까지
 export const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 
 /** 펫마다 올린 이미지(chrome.storage.local, 펫 순서와 같은 번호). skinImage 는 v0.4 이전 키 */
@@ -81,6 +81,8 @@ export async function loadSettings(): Promise<Settings> {
   const s = { ...DEFAULTS, ...got };
   // v0.6 이전의 "off"(키로 열지 않기)는 이제 없다: 펫을 쓰려면 키가 필요하므로 기본 키로
   if (!MENU_KEYS.includes(s.menuKey)) s.menuKey = DEFAULTS.menuKey;
+  // 예전(최대 6마리)에 더 많이 저장해 둔 경우 설정 창에서도 3마리까지만 보이게
+  if (Array.isArray(s.crew) && s.crew.length > MAX_CREW) s.crew = s.crew.slice(0, MAX_CREW);
   return s;
 }
 

@@ -33,7 +33,7 @@
 • 맨 위로: 페이지 맨 위로 스크롤
 
 ■ 내 마음대로 꾸미기
-• 펫 최대 6마리(펫 하나에 기능 하나), 크기, 투명도, 색
+• 펫 최대 3마리(펫 하나에 기능 하나), 크기, 투명도, 색
 • 모양: 도트 슬라임, 커서, 또는 내 GIF·이미지 (펫마다 다르게, 끌어다 놓기)
 • 메뉴 키: Alt / Ctrl / Shift / Alt+Shift
 • 다크 모드, 한국어 / English
@@ -61,7 +61,7 @@ Each pet holds one shortcut: hold Alt and click a pet to run it.
 • Back to top: scroll to the top of the page
 
 ■ Make them yours
-• Up to 6 pets (one shortcut each), size, opacity, colors
+• Up to 3 pets (one shortcut each), size, opacity, colors
 • Look: pixel slime, cursor, or your own GIF or image (one per pet, drag and drop)
 • Menu key: Alt / Ctrl / Shift / Alt+Shift
 • Dark mode, Korean / English

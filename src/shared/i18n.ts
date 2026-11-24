@@ -85,7 +85,7 @@ const ko = {
   "opt.hintAgainDone": "다음에 페이지를 열면 안내가 다시 떠요",
 
   "opt.menu": "펫과 기능",
-  "opt.menuHelp": "한 줄이 펫 한 마리예요(최대 6마리). 색은 펫 색, 이름은 키를 누르면 뜨는 이름표예요. 링크는 Shift를 같이 누르면 지금 탭에서, Ctrl을 같이 누르면 뒤쪽 탭으로 열려요(누르고 있을 키와 겹치지 않을 때만).",
+  "opt.menuHelp": "한 줄이 펫 한 마리예요(최대 3마리). 색은 펫 색, 이름은 키를 누르면 뜨는 이름표예요. 링크는 Shift를 같이 누르면 지금 탭에서, Ctrl을 같이 누르면 뒤쪽 탭으로 열려요(누르고 있을 키와 겹치지 않을 때만).",
   "opt.itemColor": "펫 색",
   "opt.itemName": "이름",
   "opt.itemNamePlaceholder": "이름 (비우면 기능 이름)",
@@ -191,7 +191,7 @@ const en: Dict = {
   "opt.hintAgainDone": "The tip will show on the next page you open",
 
   "opt.menu": "Pets & actions",
-  "opt.menuHelp": "Each row is one pet (up to 6). The color is the pet's color and the name is the tag shown while you hold the key. Add Shift to open a link in this tab, or Ctrl for a background tab (only when it isn't part of the key to hold).",
+  "opt.menuHelp": "Each row is one pet (up to 3). The color is the pet's color and the name is the tag shown while you hold the key. Add Shift to open a link in this tab, or Ctrl for a background tab (only when it isn't part of the key to hold).",
   "opt.itemColor": "Pet color",
   "opt.itemName": "Name",
   "opt.itemNamePlaceholder": "Name (empty = action name)",
