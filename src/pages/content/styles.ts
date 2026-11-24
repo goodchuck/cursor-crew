@@ -1,0 +1,57 @@
+// 펫 오버레이(Shadow DOM) 스타일. 색은 CSS 변수로 두고 .root.dark 에서 바꾼다.
+const FONT = 'system-ui,-apple-system,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic",sans-serif';
+
+export const CSS = `
+:host{all:initial}
+.root{
+  --surface:#fff; --text:#1d1d1f; --muted:#8a8a90; --hover:#f0f0f4; --edge:rgba(0,0,0,.06); --divider:#eee;
+  --tip:#1d1d1f; --tip-text:#fff; --ring:rgba(29,29,31,.18); --shadow:rgba(0,0,0,.2);
+  position:fixed;inset:0;pointer-events:none;opacity:var(--op,1);transition:opacity .25s ease;color-scheme:light}
+.root.dark{
+  --surface:#26262b; --text:#f2f2f5; --muted:#9d9da6; --hover:#34343b; --edge:rgba(255,255,255,.1); --divider:#3a3a41;
+  --tip:#f2f2f5; --tip-text:#1d1d1f; --ring:rgba(255,255,255,.3); --shadow:rgba(0,0,0,.5);
+  color-scheme:dark}
+.root.active{opacity:1}
+.root.dim{opacity:.12}
+.root.hide{opacity:0}
+.root.dim .hit,.root.hide .hit{pointer-events:none}
+.pet{position:absolute;left:0;top:0;will-change:transform}
+.pet>:first-child{transition:filter .15s}
+.pet.hot>:first-child{filter:drop-shadow(0 0 3px var(--glow)) drop-shadow(0 0 1px var(--glow))}
+.hit{position:absolute;border-radius:45%;pointer-events:auto;cursor:pointer}
+.badge{position:absolute;width:7px;height:7px;border-radius:50%;background:#A259FF;box-shadow:0 0 0 1.5px var(--surface)}
+.spark{position:absolute;color:#fff;font:700 var(--sp,12px)/1 ${FONT};text-shadow:0 0 2px var(--glow),0 0 4px var(--glow);opacity:0;pointer-events:none}
+.pet.idle .spark{animation:twinkle 3.2s ease-in-out infinite}
+@keyframes twinkle{0%,70%,100%{opacity:0;transform:scale(.4)}80%{opacity:1;transform:scale(1)}90%{opacity:.2;transform:scale(.7)}}
+.bubble{position:absolute;transform:translate(-50%,-100%);max-width:260px;background:var(--tip);color:var(--tip-text);font:600 12.5px/1.4 ${FONT};
+  padding:7px 10px;border-radius:10px;box-shadow:0 6px 18px var(--shadow);text-align:center;pointer-events:none}
+.bubble::after{content:"";position:absolute;left:50%;bottom:-5px;margin-left:-5px;border:5px solid transparent;border-bottom:0;border-top-color:var(--tip)}
+.bubble kbd{font:700 11px/1 ${FONT};background:var(--tip-text);color:var(--tip);border-radius:4px;padding:2px 5px;margin:0 1px}
+.toast{position:absolute;transform:translate(-50%,-100%);background:var(--tip);color:var(--tip-text);font:600 12px/1 ${FONT};padding:6px 9px;border-radius:8px;
+  white-space:nowrap;box-shadow:0 4px 12px var(--shadow);pointer-events:none}
+.catcher{position:absolute;inset:0;pointer-events:auto;cursor:default}
+.ring{position:absolute;border-radius:50%;border:2px dashed var(--ring);transform:translate(-50%,-50%);pointer-events:none;animation:fade .15s ease-out}
+.center{position:absolute;transform:translate(-50%,-50%);font:600 11.5px/1 ${FONT};color:var(--text);background:var(--surface);
+  padding:5px 8px;border-radius:999px;box-shadow:0 2px 8px var(--shadow);white-space:nowrap;pointer-events:none}
+.chip{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;gap:6px;padding:7px 11px 7px 9px;border-radius:999px;
+  background:var(--surface);color:var(--text);font:600 13px/1 ${FONT};white-space:nowrap;box-shadow:0 4px 14px var(--shadow),0 0 0 1px var(--edge);
+  pointer-events:auto;cursor:pointer;animation:fly .18s cubic-bezier(.2,.8,.3,1.2) both;transition:background .1s,color .1s,box-shadow .1s}
+.chip .dot{width:9px;height:9px;border-radius:50%;flex:none}
+.chip.sel{background:var(--c);color:#fff;box-shadow:0 6px 18px var(--shadow)}
+.chip.sel .dot{background:#fff!important}
+.chip .has{width:6px;height:6px;border-radius:50%;background:#A259FF}
+.chip.sel .has{background:#fff}
+@keyframes fly{from{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.3)}}
+@keyframes fade{from{opacity:0}}
+.panel{position:absolute;width:300px;pointer-events:auto;background:var(--surface);color:var(--text);border-radius:12px;
+  box-shadow:0 12px 40px var(--shadow),0 0 0 1px var(--edge);overflow:hidden;font:13px/1.45 ${FONT}}
+.panel .ph{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--divider)}
+.panel .ph b{color:var(--c)}
+.panel .where{flex:1;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.panel button{font:inherit;border:0;background:none;cursor:pointer;color:var(--muted);padding:2px 6px;border-radius:6px}
+.panel button:hover{background:var(--hover);color:var(--text)}
+.panel textarea{display:block;box-sizing:border-box;width:100%;height:150px;border:0;outline:0;resize:vertical;padding:10px 12px;
+  font:inherit;font-size:14px;color:var(--text);background:var(--surface)}
+.panel textarea::placeholder{color:var(--muted)}
+.panel .pf{display:flex;align-items:center;justify-content:space-between;padding:6px 8px 8px 12px;border-top:1px solid var(--divider);color:var(--muted);font-size:12px}
+`;

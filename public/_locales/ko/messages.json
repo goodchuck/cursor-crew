@@ -1,0 +1,6 @@
+{
+  "extName": { "message": "Cursor Crew" },
+  "extDescription": { "message": "작은 도트 펫이 마우스 옆을 따라다니고, Alt를 누르고 있거나 펫을 클릭하면 링크 열기·메모 같은 원형 메뉴가 펼쳐집니다." },
+  "actionTitle": { "message": "Cursor Crew 설정 (켜기/끄기: Alt+Shift+C)" },
+  "cmdToggle": { "message": "Cursor Crew 켜기/끄기" }
+}

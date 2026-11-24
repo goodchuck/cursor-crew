@@ -1,0 +1,23 @@
+@import "tailwindcss";
+/* 클래스 이름을 찾을 곳: src/ 전체(빌드든 pnpm harness 든 같은 결과가 나오게) */
+@source "../../";
+
+/* <html class="dark"> 일 때 dark: 변형이 켜진다(테마 설정: 시스템/라이트/다크) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --color-brand: #0d99ff;
+  --color-ok: #14ae5c;
+  --color-danger: #d0341b;
+}
+
+html {
+  color-scheme: light;
+}
+html.dark {
+  color-scheme: dark;
+}
+body {
+  @apply m-0 bg-zinc-100 font-sans text-sm text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100;
+}

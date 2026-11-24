@@ -1,0 +1,6 @@
+{
+  "extName": { "message": "Cursor Crew" },
+  "extDescription": { "message": "A tiny pixel pet follows your mouse. Hold Alt or click the pet to open a radial menu with your links, a page memo and more." },
+  "actionTitle": { "message": "Cursor Crew settings (on/off: Alt+Shift+C)" },
+  "cmdToggle": { "message": "Turn Cursor Crew on/off" }
+}
