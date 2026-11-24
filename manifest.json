@@ -1,14 +1,14 @@
 {
   "manifest_version": 3,
   "name": "Cursor Crew",
-  "version": "0.1.0",
-  "description": "이름표를 단 커서들이 마우스를 따라다니다가, 멈추면 잡혀서 링크 열기·메모 같은 일을 해 줍니다.",
+  "version": "0.2.0",
+  "description": "작은 도트 펫이 마우스 옆을 따라다니다가, 멈춰서 호버하면 링크 열기·메모 같은 메뉴를 펼쳐 줍니다.",
   "permissions": ["storage"],
   "background": { "service_worker": "background.js" },
   "content_scripts": [
     {
       "matches": ["http://*/*", "https://*/*", "file:///*"],
-      "js": ["defaults.js", "content.js"],
+      "js": ["defaults.js", "skins.js", "content.js"],
       "run_at": "document_idle"
     }
   ],
@@ -21,7 +21,7 @@
   "commands": {
     "toggle-crew": {
       "suggested_key": { "default": "Alt+Shift+C" },
-      "description": "Cursor Crew 켜기/끄기"
+      "description": "작은 도트 펫이 마우스 옆을 따라다니다가, 멈춰서 호버하면 링크 열기·메모 같은 메뉴를 펼쳐 줍니다."
     }
   }
 }

@@ -13,20 +13,36 @@
     </header>
 
     <section>
-      <label class="switch"><input type="checkbox" id="enabled" /> <span>커서 크루 켜기</span></label>
+      <label class="switch"><input type="checkbox" id="enabled" /> <span>Cursor Crew 켜기</span></label>
       <p class="help">툴바 아이콘 클릭이나 <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd>로도 켜고 끌 수 있어요. <a href="#" id="shortcuts">단축키 바꾸기</a></p>
     </section>
 
     <section>
-      <h2>커서들</h2>
-      <p class="help">마우스를 잠깐 멈추면 커서들이 제자리에 서요. 그때 원하는 커서로 가서 클릭하세요. 링크는 <kbd>Shift</kbd>+클릭이면 지금 탭에서, <kbd>Ctrl</kbd>+클릭이면 뒤쪽 탭으로 열려요.</p>
+      <h2>모양</h2>
+      <p class="help">마우스 옆을 따라다니는 펫의 겉모습이에요. 기능은 모양과 상관없이 같아요.</p>
+      <div id="skins" class="skins" role="radiogroup" aria-label="스킨"></div>
+      <div id="imageRow" class="row" hidden>
+        <label class="file">이미지 고르기 <input type="file" id="imageFile" accept="image/*" /></label>
+        <span class="help" id="imageNote">PNG·GIF·JPG. 128px로 줄여서 저장해요.</span>
+      </div>
+      <div class="grid2">
+        <label class="row">개수 <input type="range" id="pets" min="1" max="3" step="1" /> <output id="petsOut"></output></label>
+        <label class="row">크기 <input type="range" id="size" min="24" max="64" step="2" /> <output id="sizeOut"></output></label>
+        <label class="row">평소 투명도 <input type="range" id="opacity" min="0.3" max="1" step="0.05" /> <output id="opacityOut"></output></label>
+        <div class="row">색 <span id="petColors" class="colors"></span></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>기능 메뉴</h2>
+      <p class="help">마우스를 잠깐 멈추면 펫이 옆에 앉아요. 펫에 마우스를 올리거나 클릭하면 이 메뉴가 펼쳐져요. 링크는 <kbd>Shift</kbd>+클릭이면 지금 탭에서, <kbd>Ctrl</kbd>+클릭이면 뒤쪽 탭으로 열려요.</p>
       <div id="crew"></div>
-      <button id="add" class="ghost">+ 커서 추가</button>
+      <button id="add" class="ghost">+ 메뉴 항목 추가</button>
     </section>
 
     <section>
       <h2>움직임</h2>
-      <label class="row">멈춘 뒤 잡히기까지 <input type="range" id="settleMs" min="200" max="1200" step="50" /> <output id="settleOut"></output></label>
+      <label class="row">멈춘 뒤 앉기까지 <input type="range" id="settleMs" min="200" max="1200" step="50" /> <output id="settleOut"></output></label>
     </section>
 
     <section>
@@ -58,6 +74,7 @@
   <!-- 확장 안에서는 아무 일도 하지 않음. 일반 페이지로 열어 미리볼 때만 chrome.* 를 흉내 낸다 -->
   <script src="test/chrome-shim.js"></script>
   <script src="defaults.js"></script>
+  <script src="skins.js"></script>
   <script src="options.js"></script>
 </body>
 </html>

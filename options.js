@@ -96,6 +96,116 @@ $("#add").addEventListener("click", () => {
   rows[rows.length - 1].select();
 });
 
+// ------------------------------------------------------------ 모양(스킨)
+const Skins = globalThis.CrewSkins;
+let skinImage = null;
+let previews = [];
+
+function renderSkins() {
+  const box = $("#skins");
+  box.innerHTML = "";
+  previews = [];
+  for (const [id, skin] of Object.entries(Skins.list)) {
+    const card = document.createElement("div");
+    card.className = "skin";
+    card.setAttribute("role", "radio");
+    card.tabIndex = 0;
+    card.setAttribute("aria-checked", String(state.skin === id));
+    const stage = document.createElement("div");
+    stage.className = "stage";
+    const holder = document.createElement("div");
+    holder.style.cssText = "position:absolute;left:50px;top:58px";
+    const color = (state.petColors && state.petColors[0]) || D.settings.petColors[0];
+    const body = skin.create(color, 40, { image: skinImage });
+    holder.appendChild(body.el);
+    stage.appendChild(holder);
+    const label = document.createElement("span");
+    label.textContent = skin.label + (skin.needsImage && !skinImage ? " (이미지 필요)" : "");
+    card.append(stage, label);
+    const pick = () => {
+      state.skin = id;
+      renderSkins();
+      save();
+    };
+    card.addEventListener("click", pick);
+    card.addEventListener("keydown", (e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), pick()));
+    box.appendChild(card);
+    previews.push(body);
+  }
+  $("#imageRow").hidden = !Skins.get(state.skin).needsImage;
+}
+
+// 미리보기: 2초 걷기(통통) ↔ 2초 쉬기
+let lastT = 0;
+function animatePreviews(now) {
+  const dt = Math.min(0.05, (now - (lastT || now)) / 1000);
+  lastT = now;
+  const t = now / 1000;
+  const moving = t % 4 < 2;
+  for (const b of previews) b.update({ t, dt, vx: moving ? 90 : 0, vy: 0, speed: moving ? 90 : 0, hover: false });
+  requestAnimationFrame(animatePreviews);
+}
+
+function renderPetColors() {
+  const box = $("#petColors");
+  box.innerHTML = "";
+  for (let i = 0; i < state.pets; i++) {
+    const inp = document.createElement("input");
+    inp.type = "color";
+    inp.value = state.petColors[i] || D.settings.petColors[i % D.settings.petColors.length];
+    inp.setAttribute("aria-label", `펫 ${i + 1} 색`);
+    inp.addEventListener("input", () => {
+      state.petColors[i] = inp.value;
+      if (i === 0) renderSkins();
+      save();
+    });
+    box.appendChild(inp);
+  }
+}
+
+function bindRange(id, fmt, onChange) {
+  const el = $("#" + id);
+  const out = $("#" + id + "Out");
+  el.value = state[id];
+  out.textContent = fmt(state[id]);
+  el.addEventListener("input", () => {
+    state[id] = +el.value;
+    out.textContent = fmt(state[id]);
+    if (onChange) onChange();
+    save();
+  });
+}
+
+// 올린 이미지는 128px 안으로 줄여 PNG 로 chrome.storage.local 에 저장
+$("#imageFile").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const url = await new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+  const img = new Image();
+  await new Promise((res, rej) => {
+    img.onload = res;
+    img.onerror = rej;
+    img.src = url;
+  });
+  const k = Math.min(1, 128 / Math.max(img.width, img.height));
+  const cv = document.createElement("canvas");
+  cv.width = Math.max(1, Math.round(img.width * k));
+  cv.height = Math.max(1, Math.round(img.height * k));
+  const cx = cv.getContext("2d");
+  cx.imageSmoothingEnabled = k < 1;
+  cx.drawImage(img, 0, 0, cv.width, cv.height);
+  skinImage = cv.toDataURL("image/png");
+  await chrome.storage.local.set({ skinImage });
+  $("#imageNote").textContent = `저장됨 (${cv.width}×${cv.height})`;
+  renderSkins();
+  flashSaved();
+});
+
 // ------------------------------------------------------------ 메모 목록
 async function renderMemos() {
   const all = await chrome.storage.local.get(null);
@@ -137,6 +247,14 @@ async function renderMemos() {
   $("#settleMs").value = state.settleMs;
   $("#settleOut").textContent = (state.settleMs / 1000).toFixed(2) + "초";
   $("#excluded").value = (state.excluded || []).join("\n");
+  state.petColors = [...(state.petColors || D.settings.petColors)];
+  skinImage = (await chrome.storage.local.get("skinImage")).skinImage || null;
+  renderSkins();
+  renderPetColors();
+  bindRange("pets", (v) => v + "마리", renderPetColors);
+  bindRange("size", (v) => v + "px");
+  bindRange("opacity", (v) => Math.round(v * 100) + "%");
+  requestAnimationFrame(animatePreviews);
   renderCrew();
   renderMemos();
 
