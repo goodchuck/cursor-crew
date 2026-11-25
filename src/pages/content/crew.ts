@@ -401,6 +401,12 @@ export class Crew implements ActionHost {
   }
 
   // ------------------------------------------------------------ 메모
+  /** 같은 탭에서 다른 글·영상으로 넘어갔을 때: 열린 메모장은 원래 페이지에 저장하고 닫은 뒤 표시를 새로 */
+  onNavigate() {
+    this.closeMemo();
+    void this.refreshMemo();
+  }
+
   async refreshMemo() {
     const key = memoKey();
     const got = await chrome.storage.local.get(key);

@@ -123,8 +123,24 @@ export async function reorderImages(images: (string | null)[], order: number[]):
 
 export const isImageKey = (k: string) => k.startsWith("skinImage");
 
-/** 페이지별 메모 키(주소의 경로까지) */
-export const memoKey = (loc: { origin: string; pathname: string } = location) => "memo:" + loc.origin + loc.pathname;
+/**
+ * 주소 뒤쪽(?…)에서 "어떤 글·영상인지"를 가리키는 값들. 메모 키에 이것만 넣는다.
+ * 예: youtube.com/watch?v=…, dcinside ?id=…&no=…, 그누보드 ?bo_table=…&wr_id=…, 네이버 블로그 ?blogId=…&logNo=…
+ * utm_·정렬·시간(t=) 같은 나머지 값은 빼서, 같은 글이면 같은 메모가 열리게 한다.
+ */
+const PAGE_ID_PARAMS = ["v", "id", "no", "p", "page_id", "bo_table", "wr_id", "blogId", "logNo", "docid", "articleId", "postId"];
+
+/** 페이지별 메모 키: 주소의 경로 + 글·영상을 가리키는 쿼리 값(PAGE_ID_PARAMS) */
+export function memoKey(loc: { origin: string; pathname: string; search?: string } = location): string {
+  const q = new URLSearchParams(loc.search || "");
+  const ids = new URLSearchParams();
+  for (const k of PAGE_ID_PARAMS) {
+    const v = q.get(k);
+    if (v) ids.set(k, v);
+  }
+  const tail = ids.toString();
+  return "memo:" + loc.origin + loc.pathname + (tail ? "?" + tail : "");
+}
 
 export interface Memo {
   text: string;

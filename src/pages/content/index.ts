@@ -50,6 +50,18 @@ function start() {
     else if (area === "local" && crew && changes[memoKey()]) void crew.refreshMemo();
   });
   onSystemThemeChange(() => crew?.setDark(isDark(themePref)));
+
+  // 새로고침 없이 화면만 바뀌는 사이트(유튜브·깃허브 등)에서 주소가 바뀌면 메모 표시를 다시 확인한다.
+  // 페이지의 history.pushState 는 콘텐츠 스크립트에서 가로챌 수 없어서 주소를 가볍게 비교한다.
+  let lastKey = memoKey();
+  const checkUrl = () => {
+    const key = memoKey();
+    if (key === lastKey) return;
+    lastKey = key;
+    crew?.onNavigate();
+  };
+  addEventListener("popstate", checkUrl);
+  setInterval(checkUrl, 700);
   void apply();
 }
 
