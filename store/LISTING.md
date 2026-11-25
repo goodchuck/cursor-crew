@@ -84,7 +84,7 @@ It never reads page content or browsing history, and sends nothing anywhere. Set
 
 | 파일 | 규격 | 필수 |
 | --- | --- | --- |
-| `public/icons/128.png` | 128×128 스토어 아이콘 | 필수 |
+| `public/icons/128.png` | 128×128 스토어 아이콘(커서 + 따라오는 슬라임, `pnpm icons`로 다시 만듦) | 필수 |
 | `screenshot-1-follow.png` 따라다니기 | 1280×800 | 필수(최소 1장) |
 | `screenshot-2-alt.png` Alt를 누르면 이름표 | 1280×800 | |
 | `screenshot-3-memo.png` 페이지 메모 | 1280×800 | |

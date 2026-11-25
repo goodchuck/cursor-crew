@@ -1,0 +1,55 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>icon</title></head><body><pre id="out"></pre>
+<!-- 확장 아이콘(시안 C: 커서 + 따라오는 슬라임). scripts/make-icons.mjs 가 headless 크롬으로 열어 PNG 를 뽑는다. -->
+<script>
+const N = 16;
+const shade = (hex, f) => { const n = parseInt(hex.slice(1), 16); const t = f < 0 ? 0 : 255, p = Math.abs(f);
+  return "rgb(" + [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(v => Math.round(v + (t - v) * p)).join(",") + ")"; };
+const blank = () => Array.from({ length: N }, () => Array(N).fill(null));
+
+// 반타원 돔 슬라임(확장 안의 펫과 같은 방식)
+function slime(g, cx, base, rx, ry, color, face = true) {
+  const pal = { o: shade(color, -0.62), c: color, d: shade(color, -0.18), l: shade(color, 0.7) };
+  const inside = (x, y) => { if (y > base) return false; const dx = (x + 0.5 - cx) / rx, dy = (y + 0.5 - (base + 1)) / ry; return dx * dx + dy * dy <= 1; };
+  let top = N;
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    if (!inside(x, y)) continue; top = Math.min(top, y);
+    const edge = !inside(x - 1, y) || !inside(x + 1, y) || !inside(x, y - 1) || !inside(x, y + 1);
+    g[y][x] = edge ? pal.o : y === base - 1 ? pal.d : pal.c;
+  }
+  const set = (x, y, c) => { if (g[y] && g[y][x] && g[y][x] !== pal.o) g[y][x] = c; };
+  const hx = Math.round(cx - rx * 0.5);
+  set(hx, top + 2, pal.l); set(hx + 1, top + 2, pal.l); set(hx, top + 3, pal.l);
+  if (face) {
+    const ey = Math.round(base + 1 - ry * 0.48);
+    const gap = rx > 5 ? 2 : 1;
+    for (const ex of [Math.round(cx - gap - 0.5), Math.round(cx + gap - 0.5)]) { set(ex, ey, "#1d1b24"); if (ry > 7) set(ex, ey + 1, "#1d1b24"); }
+    if (rx > 5) { set(Math.round(cx - 4), ey + 2, "#ff9db5"); set(Math.round(cx + 3), ey + 2, "#ff9db5"); }
+  }
+}
+function paint(g, rows, ox, oy, pal) {
+  rows.forEach((r, y) => [...r].forEach((ch, x) => { if (pal[ch]) g[oy + y][ox + x] = pal[ch]; }));
+}
+const ARROW = ["o......", "oo.....", "owo....", "owwo...", "owwwo..", "owwwwo.", "owwwwwo", "owwoooo", "owo....", "oo.....", "o......"];
+
+
+const TILE = "#fdf0dc";
+function drawIcon(g) {
+  paint(g, ARROW, 1, 0, { o: "#1d1b24", w: "#ffffff" });
+  slime(g, 10.5, 15, 5.2, 9, "#5BD16A");
+}
+function canvasFor(grid, size, tile, pad) {
+  const cv = document.createElement("canvas"); cv.width = cv.height = size; const c = cv.getContext("2d");
+  if (tile) { const r = size * 0.22; c.fillStyle = tile; c.beginPath(); c.roundRect(0, 0, size, size, r); c.fill(); }
+  const sc = (size - pad * 2) / N;
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (grid[y][x]) { c.fillStyle = grid[y][x]; c.fillRect(pad + x * sc, pad + y * sc, Math.ceil(sc), Math.ceil(sc)); }
+  return cv;
+}
+
+const g = blank(); drawIcon(g);
+// 128·48: 둥근 타일 위(스토어·확장 관리 화면), 16·32: 툴바용이라 타일 없이 그림만 꽉 차게
+const spec = { 16: [null, 0], 32: [null, 0], 48: [TILE, 8], 128: [TILE, 16] };
+const out = {};
+for (const [size, [tile, pad]] of Object.entries(spec)) out[size] = canvasFor(g, +size, tile, pad).toDataURL("image/png").split(",")[1];
+document.getElementById("out").textContent = JSON.stringify(out);
+</script></body></html>

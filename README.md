@@ -43,6 +43,7 @@ pnpm build
 | `pnpm typecheck` | 타입 검사만 |
 | `pnpm harness` | 확장 없이 브라우저에서 미리보기: http://localhost:5181/harness.html (펫), http://localhost:5181/options.html (설정 창). `chrome.*`는 `test/chrome-shim.ts`가 흉내 내고 저장은 그 페이지의 localStorage 에 됩니다 |
 | `pnpm store:shots` | 웹 스토어용 스크린샷·프로모션 이미지를 `store/en/`, `store/ko/`에 다시 만들기(설치된 크롬을 headless로 사용) |
+| `pnpm icons` | 확장 아이콘(`public/icons/*.png`)을 다시 만들기. 그림은 `scripts/icon/icon.html`의 16×16 도트(커서 + 따라오는 슬라임) |
 
 ## 크롬 웹 스토어에 올리기
 
