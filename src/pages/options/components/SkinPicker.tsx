@@ -28,7 +28,8 @@ function Preview({ id, color, image, pixelated }: { id: SkinId; color: string; i
   }, [id, color, image, pixelated]);
   return (
     <div className="relative h-16 w-full">
-      <div ref={ref} className="absolute top-[58px] left-1/2" />
+      {/* 커서 모양은 화살표 끝이 기준점이라 가운데 위쪽에 둔다 */}
+      <div ref={ref} className={id === "cursor" ? "absolute top-[18px] left-[calc(50%-8px)]" : "absolute top-[58px] left-1/2"} />
     </div>
   );
 }

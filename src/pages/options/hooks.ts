@@ -88,19 +88,3 @@ export function useMemos() {
   return memos;
 }
 
-/** "모든 메모 보기"로 열리면 #memos 로 이동 */
-export function useHashJump(ready: boolean) {
-  useEffect(() => {
-    if (!ready) return;
-    const jump = () => {
-      const el = location.hash && document.getElementById(location.hash.slice(1));
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    };
-    const id = setTimeout(jump, 200);
-    addEventListener("hashchange", jump);
-    return () => {
-      clearTimeout(id);
-      removeEventListener("hashchange", jump);
-    };
-  }, [ready]);
-}

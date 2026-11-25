@@ -1,18 +1,23 @@
 // 설정 창. 툴바 아이콘을 누르면 별도 창(540×720)으로 열린다. 바꾸면 바로 저장되고 열린 탭의 펫에도 반영된다.
+// 탭: 펫(쓰는 법 + 펫별 기능) · 단축키 · 모양 · 메모 · 기타(테마·언어·끌 사이트)
 import { useEffect, useState } from "react";
 import { CUSTOM_IMAGES, FORMATIONS, HINT_SEEN_KEY, reorderImages, saveImage, type Formation, type LangPref, type MenuItem, type MenuKey, type Settings, type ThemePref } from "@src/shared/settings";
 import { resolveLang, type MsgKey } from "@src/shared/i18n";
-import { IS_MAC, menuKeyLabel } from "@src/shared/platform";
+import { IS_MAC, codeLabel, menuKeyLabel } from "@src/shared/platform";
 import { KeyRecorder } from "./components/KeyRecorder";
 import { getSkin } from "@src/shared/skins";
 import { itemName } from "@src/pages/content/actions";
-import { useDocumentLang, useHashJump, useImages, useMemos, useSettings, useT, useThemeClass } from "./hooks";
+import { useDocumentLang, useImages, useMemos, useSettings, useT, useThemeClass } from "./hooks";
 import { prepareImage } from "./image";
-import { Range, Section, Select, Switch, btnCls, inputCls } from "./components/ui";
+import { Kbd, Range, Row, Section, Segmented, Select, Switch, Toggle, btnCls, inputCls } from "./components/ui";
 import { SkinPicker } from "./components/SkinPicker";
 import { ImageSlots, type Msg } from "./components/ImageSlots";
 import { MenuEditor } from "./components/MenuEditor";
 import { MemoList } from "./components/MemoList";
+
+type Tab = "pets" | "keys" | "look" | "memos" | "more";
+const TABS: Tab[] = ["pets", "keys", "look", "memos", "more"];
+const tabFromHash = (): Tab => TABS.find((x) => "#" + x === location.hash) ?? "pets";
 
 export default function Options() {
   const { settings: s, update, savedAt } = useSettings();
@@ -23,7 +28,19 @@ export default function Options() {
   const [notice, setNotice] = useState<MsgKey | null>(null);
   useThemeClass(s);
   useDocumentLang(s, t);
-  useHashJump(!!s);
+
+  // 탭은 주소 #으로도 연다(페이지 메모장의 '전체 메모' → #memos)
+  const [tab, setTab] = useState<Tab>(tabFromHash);
+  useEffect(() => {
+    const on = () => setTab(tabFromHash());
+    addEventListener("hashchange", on);
+    return () => removeEventListener("hashchange", on);
+  }, []);
+  const go = (x: Tab) => {
+    history.replaceState(null, "", "#" + x);
+    setTab(x);
+    scrollTo(0, 0);
+  };
 
   // 저장될 때마다 헤더에 잠깐 "저장됨"
   useEffect(() => {
@@ -74,128 +91,213 @@ export default function Options() {
     ["Shift", menuKeyLabel("Shift")],
     ["AltShift", IS_MAC ? menuKeyLabel("AltShift") : t("opt.keyAltShiftNote")],
   ];
+  const lang = resolveLang(s.lang);
+  const keyName = menuKeyLabel(s.menuKey).replace(/^[⌥⌃⇧]+ /, "");
+  const [step1a, step1b] = t("guide.step1", { key: "\u0000" }).split("\u0000");
+  const themeNames: Record<ThemePref, string> = { system: t("opt.themeSystem"), light: t("opt.themeLight"), dark: t("opt.themeDark") };
+  const themeIcon: Record<ThemePref, string> = { system: "🖥️", light: "☀️", dark: "🌙" };
+  const nextTheme: Record<ThemePref, ThemePref> = { system: "light", light: "dark", dark: "system" };
+  const tabs: [Tab, string][] = [
+    ["pets", t("tab.pets")],
+    ["keys", t("tab.keys")],
+    ["look", t("tab.look")],
+    ["memos", t("tab.memos") + (memos.length ? ` ${memos.length}` : "")],
+    ["more", t("tab.more")],
+  ];
 
   return (
-    <main className="mx-auto max-w-[720px] px-3.5 pb-10">
-      <header className="sticky top-0 z-10 -mx-3.5 mb-1.5 flex items-center gap-2.5 border-b border-zinc-200 bg-zinc-100/90 px-3.5 py-3 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/90">
-        <h1 className="m-0 text-lg font-bold">Cursor Crew</h1>
-        <span aria-live="polite" className="text-[13px] text-ok">
-          {notice && t(notice)}
-        </span>
-        <Switch checked={s.enabled} onChange={(enabled) => update({ enabled })} label={t(s.enabled ? "opt.on" : "opt.off")} title={t("opt.toggleTitle")} />
-      </header>
-      <p className="mx-0.5 mt-1 mb-3 text-[13px] text-zinc-500 dark:text-zinc-400">
-        {t("opt.topHelp")}{" "}
-        <a
-          href="#"
-          className="text-brand"
-          onClick={(e) => {
-            e.preventDefault();
-            void chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
-          }}
-        >
-          {t("opt.shortcuts")}
-        </a>
-      </p>
-
-      <Section title={t("opt.openMenu")} help={t("opt.openMenuHelp")}>
-        <div className="flex flex-wrap items-center gap-2">
-          <label className="flex items-center gap-2 whitespace-nowrap">
-            {t("opt.menuKey")}
-            <Select<MenuKey> value={s.menuKey} onChange={(menuKey) => update({ menuKey })} options={keyOptions} className="w-auto" />
-          </label>
+    <main className="mx-auto max-w-[720px] pb-10">
+      <header className="sticky top-0 z-10 border-b border-zinc-200 bg-zinc-100/90 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/90">
+        <div className="flex items-center gap-2 px-3.5 pt-3 pb-1.5">
+          <img src="/icons/32.png" alt="" width={24} height={24} />
+          <h1 className="m-0 text-lg font-bold">Cursor Crew</h1>
+          <span aria-live="polite" className="text-[13px] text-ok">
+            {notice && t(notice)}
+          </span>
+          <span className="ml-auto" />
           <button
             type="button"
-            className={btnCls}
-            onClick={async () => {
-              await chrome.storage.local.remove(HINT_SEEN_KEY);
-              setNotice("opt.hintAgainDone");
-            }}
+            className="cursor-pointer rounded-lg px-2 py-1 text-base leading-none hover:bg-zinc-200 dark:hover:bg-zinc-800"
+            title={t("opt.themeToggle", { name: themeNames[s.theme] })}
+            aria-label={t("opt.themeToggle", { name: themeNames[s.theme] })}
+            onClick={() => update({ theme: nextTheme[s.theme] })}
           >
-            {t("opt.hintAgain")}
+            {themeIcon[s.theme]}
           </button>
+          <Switch checked={s.enabled} onChange={(enabled) => update({ enabled })} label={t(s.enabled ? "opt.on" : "opt.off")} title={t("opt.toggleTitle")} />
         </div>
-        <label className="mt-3 flex flex-wrap items-center gap-2">
-          <span className="whitespace-nowrap">{t("opt.formation")}</span>
-          <Select<Formation>
-            value={s.formation}
-            onChange={(formation) => update({ formation })}
-            options={FORMATIONS.map((f) => [f, t(`opt.formation.${f}` as const)])}
-            className="w-auto"
-          />
-          <span className="text-xs text-zinc-400">{t("opt.formationHelp")}</span>
-        </label>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <span className="whitespace-nowrap">{t("opt.lineKey")}</span>
-          <KeyRecorder value={s.lineKey} onChange={(lineKey) => update({ lineKey })} prefix={menuKeyLabel(s.menuKey)} t={t} />
-        </div>
-        <label className="mt-2 flex flex-wrap items-center gap-2">
-          <input type="checkbox" className="accent-brand" checked={s.numberKeys} onChange={(e) => update({ numberKeys: e.target.checked })} />
-          <span>{t("opt.numberKeys")}</span>
-          <span className="text-xs text-zinc-400">{t("opt.numberKeysHelp")}</span>
-        </label>
-      </Section>
+        <nav role="tablist" className="flex gap-0.5 overflow-x-auto px-2">
+          {tabs.map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={tab === id}
+              onClick={() => go(id)}
+              className={`cursor-pointer border-b-2 px-3 pt-1 pb-2 text-[13px] whitespace-nowrap ${
+                tab === id ? "border-brand font-bold text-zinc-900 dark:text-white" : "border-transparent text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+      </header>
 
-      <Section title={t("opt.menu")} help={t("opt.menuHelp")}>
-        <MenuEditor items={s.crew} onChange={onCrewChange} lang={resolveLang(s.lang)} t={t} />
-      </Section>
+      <div className="px-3.5 pt-3">
+        {!s.enabled && (
+          <div className="mb-3 flex items-center gap-3 rounded-xl bg-amber-50 px-3.5 py-2.5 text-[13px] text-amber-900 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:ring-amber-900">
+            <span className="flex-1">{t("opt.offBanner")}</span>
+            <button type="button" className="cursor-pointer rounded-lg bg-amber-500 px-3 py-1 font-semibold text-white hover:bg-amber-600" onClick={() => update({ enabled: true })}>
+              {t("opt.turnOn")}
+            </button>
+          </div>
+        )}
 
-      <Section title={t("opt.look")} help={t("opt.lookHelp")}>
-        <SkinPicker
-          value={s.skin}
-          onChange={(skin) => {
-            update({ skin });
-            if (getSkin(skin).needsImage && !firstImage) setImgMsg({ key: "opt.imgUpload" });
-          }}
-          color={s.crew[0]?.color || "#5BD16A"}
-          image={firstImage}
-          pixelated={s.imagePixelated}
-          t={t}
-        />
-        {/* 내 이미지·GIF 올리기: CUSTOM_IMAGES 가 꺼져 있으면 숨김(코드는 유지) */}
-        {CUSTOM_IMAGES && <ImageSlots names={names} images={images} pixelated={s.imagePixelated} active={s.skin === "image"} msg={imgMsg} onFile={onFile} onClear={onClear} onPixelated={(imagePixelated) => update({ imagePixelated })} t={t} />}
-        <div className="grid gap-2.5">
-          <Range label={t("opt.size")} value={s.size} min={24} max={64} step={2} onChange={(size) => update({ size })} display={s.size + "px"} />
-          <Range label={t("opt.opacity")} value={s.opacity} min={0.3} max={1} step={0.05} onChange={(opacity) => update({ opacity })} display={Math.round(s.opacity * 100) + "%"} />
-        </div>
-      </Section>
+        {tab === "pets" && (
+          <>
+            {/* 쓰는 법: 긴 글 대신 3단계 */}
+            <section className="mb-3 rounded-2xl bg-gradient-to-br from-sky-50 to-white p-4 ring-1 ring-sky-100 dark:from-sky-950/50 dark:to-zinc-900 dark:ring-sky-900/50">
+              <h2 className="m-0 mb-2.5 text-[13px] font-bold text-sky-700 dark:text-sky-300">{t("guide.title")}</h2>
+              <ol className="m-0 flex list-none flex-wrap items-center gap-1.5 p-0 text-[13px] font-semibold">
+                <li className="flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1.5 shadow-sm dark:bg-zinc-800">
+                  <span className="text-sky-500">1</span>
+                  {step1a}
+                  <Kbd>{keyName}</Kbd>
+                  {step1b}
+                </li>
+                <li aria-hidden className="text-zinc-300 dark:text-zinc-600">
+                  →
+                </li>
+                <li className="flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1.5 shadow-sm dark:bg-zinc-800">
+                  <span className="text-sky-500">2</span> {t("guide.step2")}
+                </li>
+                <li aria-hidden className="text-zinc-300 dark:text-zinc-600">
+                  →
+                </li>
+                <li className="flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1.5 shadow-sm dark:bg-zinc-800">
+                  <span className="text-sky-500">3</span> {t("guide.step3")}
+                </li>
+              </ol>
+              <ul className="m-0 mt-2.5 flex list-none flex-wrap gap-x-3 gap-y-1 p-0 text-xs text-zinc-500 dark:text-zinc-400">
+                {s.numberKeys && <li>· {t("guide.tipNum", { key: keyName })}</li>}
+                {s.lineKey && <li>· {t("guide.tipLine", { key: keyName, line: codeLabel(s.lineKey) })}</li>}
+                <li>· {t("guide.tipFree")}</li>
+              </ul>
+            </section>
+            <Section title={t("opt.menu")} help={t("opt.petsHelp")}>
+              <MenuEditor items={s.crew} onChange={onCrewChange} lang={lang} t={t} skin={s.skin} />
+            </Section>
+          </>
+        )}
 
-      <Section title={t("opt.display")}>
-        <div className="grid gap-2.5">
-          <label className="flex items-center gap-3">
-            <span className="w-20 shrink-0">{t("opt.theme")}</span>
-            <Select<ThemePref>
-              value={s.theme}
-              onChange={(theme) => update({ theme })}
-              options={[
-                ["system", t("opt.themeSystem")],
-                ["light", t("opt.themeLight")],
-                ["dark", t("opt.themeDark")],
-              ]}
+        {tab === "keys" && (
+          <Section title={t("tab.keys")}>
+            <Row title={t("opt.menuKey")} help={t("opt.menuKeyHelp")}>
+              <div className="w-44">
+                <Select<MenuKey> label={t("opt.menuKey")} value={s.menuKey} onChange={(menuKey) => update({ menuKey })} options={keyOptions} />
+              </div>
+            </Row>
+            <Row title={t("opt.numberKeysRow")} help={`${t("guide.tipNum", { key: keyName })}. ${t("opt.numberKeysHelp")}`}>
+              <Toggle checked={s.numberKeys} onChange={(numberKeys) => update({ numberKeys })} label={t("opt.numberKeys")} />
+            </Row>
+            <Row title={t("opt.lineKey")} help={t("opt.lineKeyHelp")}>
+              <KeyRecorder value={s.lineKey} onChange={(lineKey) => update({ lineKey })} prefix={keyName} t={t} />
+            </Row>
+            <Row title={t("opt.formation")} help={t("opt.formationRowHelp")}>
+              <Segmented<Formation>
+                label={t("opt.formation")}
+                value={s.formation}
+                onChange={(formation) => update({ formation })}
+                options={FORMATIONS.map((f) => [f, t(`opt.formation.${f}` as const).replace(/\s*\(.*\)$/, "")])}
+              />
+            </Row>
+            <Row title={t("opt.toggleKey")} help={t("opt.toggleKeyHelp")}>
+              <Kbd>{IS_MAC ? "⌥⇧C" : "Alt+Shift+C"}</Kbd>
+              <a
+                href="#"
+                className="text-[13px] text-brand"
+                onClick={(e) => {
+                  e.preventDefault();
+                  void chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
+                }}
+              >
+                {t("opt.shortcuts")}
+              </a>
+            </Row>
+            <Row title={t("opt.hintRow")} help={t("opt.hintRowHelp")}>
+              <button
+                type="button"
+                className={btnCls}
+                onClick={async () => {
+                  await chrome.storage.local.remove(HINT_SEEN_KEY);
+                  setNotice("opt.hintAgainDone");
+                }}
+              >
+                {t("opt.hintShow")}
+              </button>
+            </Row>
+          </Section>
+        )}
+
+        {tab === "look" && (
+          <Section title={t("opt.look")} help={t("opt.lookHelp")}>
+            <SkinPicker
+              value={s.skin}
+              onChange={(skin) => {
+                update({ skin });
+                if (getSkin(skin).needsImage && !firstImage) setImgMsg({ key: "opt.imgUpload" });
+              }}
+              color={s.crew[0]?.color || "#5BD16A"}
+              image={firstImage}
+              pixelated={s.imagePixelated}
+              t={t}
             />
-          </label>
-          <label className="flex items-center gap-3">
-            <span className="w-20 shrink-0">{t("opt.lang")}</span>
-            <Select<LangPref>
-              value={s.lang}
-              onChange={(lang) => update({ lang })}
-              options={[
-                ["auto", t("opt.langAuto")],
-                ["ko", "한국어"],
-                ["en", "English"],
-              ]}
-            />
-          </label>
-        </div>
-      </Section>
+            {/* 내 이미지·GIF 올리기: CUSTOM_IMAGES 가 꺼져 있으면 숨김(코드는 유지) */}
+            {CUSTOM_IMAGES && <ImageSlots names={names} images={images} pixelated={s.imagePixelated} active={s.skin === "image"} msg={imgMsg} onFile={onFile} onClear={onClear} onPixelated={(imagePixelated) => update({ imagePixelated })} t={t} />}
+            <div className="grid gap-2.5">
+              <Range label={t("opt.size")} value={s.size} min={24} max={64} step={2} onChange={(size) => update({ size })} display={s.size + "px"} />
+              <Range label={t("opt.opacity")} value={s.opacity} min={0.3} max={1} step={0.05} onChange={(opacity) => update({ opacity })} display={Math.round(s.opacity * 100) + "%"} />
+            </div>
+          </Section>
+        )}
 
-      <Section title={t("opt.excluded")} help={t("opt.excludedHelp")}>
-        <ExcludedSites value={s.excluded} onChange={(excluded) => update({ excluded })} />
-      </Section>
+        {tab === "memos" && (
+          <Section id="memos" title={t("opt.memos")} help={memos.length ? t("opt.memoCount", { n: memos.length }) : undefined}>
+            <MemoList memos={memos} lang={lang} t={t} />
+          </Section>
+        )}
 
-      <Section id="memos" title={t("opt.memos")}>
-        <MemoList memos={memos} lang={resolveLang(s.lang)} t={t} />
-      </Section>
+        {tab === "more" && (
+          <>
+            <Section title={t("opt.display")}>
+              <Row title={t("opt.theme")}>
+                <Segmented<ThemePref>
+                  label={t("opt.theme")}
+                  value={s.theme}
+                  onChange={(theme) => update({ theme })}
+                  options={(["system", "light", "dark"] as ThemePref[]).map((x) => [x, `${themeIcon[x]} ${themeNames[x]}`])}
+                />
+              </Row>
+              <Row title={t("opt.lang")}>
+                <Segmented<LangPref>
+                  label={t("opt.lang")}
+                  value={s.lang}
+                  onChange={(l) => update({ lang: l })}
+                  options={[
+                    ["auto", t("opt.langAuto")],
+                    ["ko", "한국어"],
+                    ["en", "English"],
+                  ]}
+                />
+              </Row>
+            </Section>
+            <Section title={t("opt.excluded")} help={t("opt.excludedHelp")}>
+              <ExcludedSites value={s.excluded} onChange={(excluded) => update({ excluded })} />
+            </Section>
+          </>
+        )}
+      </div>
     </main>
   );
 }
