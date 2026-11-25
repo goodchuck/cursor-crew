@@ -50,7 +50,12 @@ export interface Settings {
   lang: LangPref;
   /** 펫들(펫 한 마리 = 기능 하나, 최대 MAX_CREW) */
   crew: MenuItem[];
+  /** 따라오는 모양. free: 줄줄이 뒤따르며 서로 밀어냄, line: 커서 옆 제자리에 한 줄로 서서 서로 영향 없이 같이 움직임 */
+  formation: Formation;
 }
+
+export type Formation = "free" | "line";
+export const FORMATIONS: Formation[] = ["free", "line"];
 
 export const DEFAULTS: Settings = {
   enabled: true,
@@ -62,6 +67,7 @@ export const DEFAULTS: Settings = {
   imagePixelated: false,
   theme: "system",
   lang: "auto",
+  formation: "free",
   // 기본은 3마리: 검색(메뉴로 여러 검색), 페이지 도구(메뉴), 메모. 이름은 비워 두면 프리셋·기능 이름이 언어에 맞춰 뜬다
   crew: [
     {
@@ -125,6 +131,7 @@ export async function loadSettings(): Promise<Settings> {
   if (!s.crew.length) s.crew = DEFAULTS.crew;
   // 내 이미지 스킨을 꺼 둔 동안은 예전에 골라 둔 사람도 슬라임으로(올려 둔 그림은 지우지 않음)
   if (!CUSTOM_IMAGES && s.skin === "image") s.skin = DEFAULTS.skin;
+  if (!FORMATIONS.includes(s.formation)) s.formation = DEFAULTS.formation;
   return s;
 }
 

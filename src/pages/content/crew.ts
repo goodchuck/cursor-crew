@@ -10,7 +10,7 @@
  *
  * 겉모습은 shared/skins.ts, 기능은 actions.ts, 글자는 shared/i18n.ts 가 맡는다.
  */
-import { MAX_CREW, HINT_SEEN_KEY, DEFAULTS, MENU_KEY_SPEC, memoKey, type MenuItem, type MenuKey, type Settings, type Memo, type Task } from "@src/shared/settings";
+import { MAX_CREW, HINT_SEEN_KEY, DEFAULTS, MENU_KEY_SPEC, memoKey, type Formation, type MenuItem, type MenuKey, type Settings, type Memo, type Task } from "@src/shared/settings";
 import { KEY_LABEL, type Lang, type T } from "@src/shared/i18n";
 import { getSkin, type Skin, type SkinBody } from "@src/shared/skins";
 import { ACTIONS, itemHint, selectedText, taskName, type ActionHost, type Mods, type Point, type RunCtx } from "./actions";
@@ -79,6 +79,7 @@ export class Crew implements ActionHost {
   private size: number;
   private key: MenuKey;
   private armed = false; // 메뉴 키를 누르고 있는 중
+  private formation: Formation;
   private mv = { x: 0, y: 0 }; // 마우스 속도(px/s, 부드럽게)
   private lastMove = performance.now();
   private lastEv = 0;
@@ -101,6 +102,7 @@ export class Crew implements ActionHost {
     this.lang = lang;
     this.size = clamp(+cfg.size || 36, 20, 72);
     this.key = MENU_KEY_SPEC[cfg.menuKey] ? cfg.menuKey : DEFAULTS.menuKey;
+    this.formation = cfg.formation === "line" ? "line" : "free";
     this.mouse = mouse;
     this.visible = !!mouse;
 
@@ -257,6 +259,8 @@ export class Crew implements ActionHost {
     const d = Math.hypot(dx, dy);
     const spd = Math.hypot(this.mv.x, this.mv.y);
     const toward = this.mv.x * dx + this.mv.y * dy > 0;
+    // 정렬 모드: 각자 커서 옆 제자리로만 간다(앞 펫을 따라가거나 멈추지 않음)
+    if (this.formation === "line") return { ...this.restSpot(pet.i, mouse), k: 140 };
     if (pet.held) {
       if (d > s * 2.3) pet.held = false;
     } else if (d < s * 0.75 || (d < s * 1.6 && toward && spd > 20 && spd < 500)) pet.held = true;
@@ -347,6 +351,13 @@ export class Crew implements ActionHost {
       e.stopPropagation();
       return;
     }
+    // 메뉴 키를 누른 채 0: 따라다니기 ↔ 한 줄 정렬 바꾸기(설정에 저장)
+    if (this.armed && (e.code === "Digit0" || e.code === "Numpad0")) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.toggleFormation();
+      return;
+    }
     // 메뉴 키를 누른 채 1·2·3: 그 번호 펫을 바로 실행(조준 없이). 숫자 자리 키(code)로 봐서 Shift 가 섞여도 된다
     const num = /^(?:Digit|Numpad)([1-9])$/.exec(e.code);
     if (this.armed && num && this.pets[+num[1] - 1]) {
@@ -380,6 +391,21 @@ export class Crew implements ActionHost {
     if (!this.isSpecKey(e.key)) return;
     if (e.key === "Alt" && this.present) e.preventDefault();
     this.disarm();
+  }
+
+  /** 설정 창이나 다른 탭에서 바뀌었을 때(펫을 새로 만들지 않고 모양만) */
+  setFormation(f: Formation) {
+    if (f === this.formation) return;
+    this.formation = f;
+    for (const pet of this.pets) pet.held = false;
+  }
+
+  private toggleFormation() {
+    const next: Formation = this.formation === "line" ? "free" : "line";
+    this.setFormation(next);
+    const p = this.mouse || { x: 0, y: 0 };
+    this.toast({ x: p.x, y: p.y - this.size * 2.4 }, this.t(next === "line" ? "toast.line" : "toast.free"));
+    void chrome.storage.sync.set({ formation: next });
   }
 
   /** 클릭의 Shift·Ctrl 중 메뉴 키에 들어 있지 않은 것만 링크 여는 위치를 바꾸는 데 쓴다 */
@@ -470,8 +496,8 @@ export class Crew implements ActionHost {
       const c = tg.hold ? 18 : 2 * Math.sqrt(k) * (tg.k ? 1 : 0.8); // 멈출 땐 브레이크만, 자리로 모일 땐 튕기지 않게
       let ax = (tg.x - pet.x) * k - pet.vx * c;
       let ay = (tg.y - pet.y) * k - pet.vy * c;
-      // 서로 겹치지 않게 밀어낸다(멈춰 있는 펫끼리도)
-      for (const o of this.pets) {
+      // 서로 겹치지 않게 밀어낸다(멈춰 있는 펫끼리도). 정렬 모드·키를 누른 동안은 자리가 따로 있어 밀지 않는다
+      if (this.formation === "free" && !this.armed) for (const o of this.pets) {
         if (o === pet) continue;
         const dx = pet.x - o.x;
         const dy = pet.y - o.y;

@@ -47,6 +47,12 @@ function start() {
   }
 
   chrome.storage.onChanged.addListener((changes, area) => {
+    // 모양(따라다니기/정렬)만 바뀌면 펫을 새로 만들지 않는다(키를 누른 채 0 으로 바꾼 직후에도 그대로 이어지게)
+    const keys = Object.keys(changes);
+    if (area === "sync" && crew && keys.length === 1 && keys[0] === "formation") {
+      crew.setFormation(changes.formation.newValue === "line" ? "line" : "free");
+      return;
+    }
     if (area === "sync" || (area === "local" && Object.keys(changes).some(isImageKey))) void apply();
     else if (area === "local" && crew && changes[memoKey()]) void crew.refreshMemo();
   });
