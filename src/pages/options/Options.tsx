@@ -116,7 +116,7 @@ export default function Options() {
       </Section>
 
       <Section title={t("opt.menu")} help={t("opt.menuHelp")}>
-        <MenuEditor items={s.crew} onChange={onCrewChange} t={t} />
+        <MenuEditor items={s.crew} onChange={onCrewChange} lang={resolveLang(s.lang)} t={t} />
       </Section>
 
       <Section title={t("opt.look")} help={t("opt.lookHelp")}>

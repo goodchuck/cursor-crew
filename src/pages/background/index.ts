@@ -47,7 +47,7 @@ function normalizeUrl(raw: unknown): string | null {
   }
 }
 
-type Msg = { type: "crew:open"; url: string; sameTab?: boolean; background?: boolean } | { type: "crew:options"; hash?: string };
+type Msg = { type: "crew:open"; url: string; sameTab?: boolean; background?: boolean } | { type: "crew:options"; hash?: string } | { type: "crew:dup" };
 
 chrome.runtime.onMessage.addListener((msg: Msg, sender, reply) => {
   if (msg?.type === "crew:open") {
@@ -66,4 +66,6 @@ chrome.runtime.onMessage.addListener((msg: Msg, sender, reply) => {
     return true; // 비동기 응답
   }
   if (msg?.type === "crew:options") void openDashboard(msg.hash);
+  // 탭 복제: 보낸 탭을 그대로 복제(tabs 권한 없이 됨)
+  if (msg?.type === "crew:dup" && sender.tab?.id != null) void chrome.tabs.duplicate(sender.tab.id);
 });

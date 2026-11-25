@@ -41,7 +41,8 @@ function start() {
       crew = null;
     }
     if (!on) return;
-    crew = new Crew({ cfg, mouse: lastMouse, images, t: makeT(resolveLang(cfg.lang)), dark: isDark(cfg.theme) });
+    const lang = resolveLang(cfg.lang);
+    crew = new Crew({ cfg, mouse: lastMouse, images, t: makeT(lang), lang, dark: isDark(cfg.theme) });
     if (lastMouse) void crew.maybeHint();
   }
 

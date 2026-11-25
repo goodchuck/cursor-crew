@@ -11,29 +11,32 @@
 
 이 문구는 `public/_locales/{ko,en}/messages.json`의 `extDescription`에서 자동으로 들어갑니다.
 
-- ko: 작은 도트 펫들이 마우스를 따라다녀요. Alt를 누른 채 펫을 클릭하면 자주 가는 링크 열기, URL 복사, 페이지 메모 같은 기능이 바로 실행돼요.
-- en: Tiny pixel pets follow your mouse. Hold Alt and click a pet to open a favorite link, copy the URL, jot a page memo and more.
+- ko: 작은 도트 펫들이 마우스를 따라다녀요. Alt를 누른 채 펫을 클릭하면 고른 글자 검색, 링크 열기, URL 복사, 페이지 메모 같은 기능이 바로 실행돼요.
+- en: Tiny pixel pets follow your mouse. Hold Alt and click a pet to search selected text, open a link, copy the URL, jot a memo and more.
 
 ### 자세한 설명 — 한국어
 
 ```
 작은 도트 펫이 마우스 옆을 졸졸 따라다니는 크롬 확장이에요.
-펫 한 마리마다 기능이 하나씩 들어 있어서, Alt를 누른 채 펫을 클릭하면 그 기능이 바로 실행돼요.
+펫마다 자주 쓰는 기능을 넣어 두고, Alt를 누른 채 펫을 클릭하면 바로 실행돼요. 기능을 여러 개 넣은 펫은 작은 메뉴가 펼쳐져요.
 
 ■ 이렇게 써요
 • 마우스를 움직이면 펫이 따라와요. 평소에는 클릭이 펫을 통과해서 페이지 사용을 방해하지 않아요.
 • Alt를 누르고 있으면 펫들이 커서 둘레로 겹치지 않게 모이고, 각 펫이 하는 일이 보여요. 그 상태로 펫을 클릭하면 실행돼요.
+• Alt를 누른 채 1·2·3을 치면 펫을 조준하지 않아도 돼요.
 • Alt를 그냥 떼면 아무 일도 일어나지 않아요.
 • 켜기/끄기: Alt+Shift+C 또는 툴바 아이콘 → 설정 창 맨 위 스위치
 
 ■ 펫이 할 수 있는 일
-• 링크 열기: 자주 가는 사이트를 펫에 등록 (Shift+클릭은 지금 탭, Ctrl+클릭은 뒤쪽 탭)
+• 고른 글자 검색: 글자를 드래그하고 펫을 누르면 구글·네이버·유튜브·위키백과·나무위키·영어사전·파파고에서 바로 검색 (고른 글자가 없으면 펫 옆에 검색창)
+• 링크 열기: 자주 가는 사이트, 또는 {sel}(고른 글자)·{url}(지금 주소)을 넣은 나만의 주소 (Shift+클릭은 지금 탭, Ctrl+클릭은 뒤쪽 탭)
+• 이 페이지 번역, 예전 모습(웨이백) 보기
 • 페이지 메모: 페이지마다 짧은 메모를 남기고, 다시 오면 이어서 보기
-• URL 복사: 지금 보는 페이지 주소를 클립보드로
-• 맨 위로: 페이지 맨 위로 스크롤
+• 복사: 페이지 주소, 또는 [제목](주소) 형식
+• 페이지 도구: 맨 위로, 맨 아래로, 뒤로, 새로고침, 탭 복제
 
 ■ 내 마음대로 꾸미기
-• 펫 최대 3마리(펫 하나에 기능 하나), 크기, 투명도, 색
+• 펫 최대 3마리, 펫 하나에 기능 6개까지(메뉴로 펼쳐짐), 크기, 투명도, 색
 • 모양: 도트 슬라임 또는 커서
 • 메뉴 키: Alt / Ctrl / Shift / Alt+Shift
 • 다크 모드, 한국어 / English
@@ -46,22 +49,25 @@
 
 ```
 Tiny pixel pets that tag along beside your mouse.
-Each pet holds one shortcut: hold Alt and click a pet to run it.
+Each pet holds your shortcuts: hold Alt and click a pet to run it. Give a pet several and it opens a small menu.
 
 ■ How it works
 • Move your mouse and the pets follow. Normally clicks pass straight through them, so they never get in your way.
 • Hold Alt and the pets fan out around your cursor, never overlapping, and show what each one does. Click a pet while holding Alt to run it.
+• Hold Alt and press 1, 2 or 3 to skip aiming.
 • Just letting go of Alt does nothing.
 • On/off: Alt+Shift+C, or the toolbar icon → switch at the top of the settings window
 
 ■ What pets can do
-• Open a link: put your favorite sites on pets (Shift+click: this tab, Ctrl+click: background tab)
+• Search selected text: select text and click a pet to search Google, YouTube, Wikipedia, a dictionary and more (nothing selected? a search box pops up next to the pet)
+• Open a link: your favorite sites, or your own address with {sel} (selected text) and {url} (this page) (Shift+click: this tab, Ctrl+click: background tab)
+• Translate this page, see past versions (Wayback)
 • Page memo: leave a short note on any page and see it again when you come back
-• Copy URL: copy the current page address
-• Back to top: scroll to the top of the page
+• Copy: the page address, or as [title](url)
+• Page tools: top, bottom, back, reload, duplicate tab
 
 ■ Make them yours
-• Up to 3 pets (one shortcut each), size, opacity, colors
+• Up to 3 pets, up to 6 actions per pet (shown as a menu), size, opacity, colors
 • Look: pixel slime or cursor
 • Menu key: Alt / Ctrl / Shift / Alt+Shift
 • Dark mode, Korean / English
@@ -146,7 +152,7 @@ The pets are drawn by a content script so they can follow the mouse on every pag
 ```
 No account or login needed.
 1. Open any normal web page (e.g. https://example.com) and move the mouse: a small slime follows the cursor.
-2. Hold Alt: the pets gather around the cursor and show labels. While holding Alt, click a pet to run its action (default pets: GitHub link, YouTube link, page memo).
+2. Hold Alt: the pets gather around the cursor and show labels. While holding Alt, click a pet (or press 1/2/3). Default pets: 1 = search menu (Google, YouTube, Wikipedia; select text first or type in the box that appears), 2 = page tools menu (copy URL, copy as Markdown, top, bottom, duplicate tab), 3 = page memo.
 3. Click the toolbar icon to open the settings window (pets, skins, menu key, language, theme, on/off switch).
 4. Alt+Shift+C toggles the extension on and off.
 ```

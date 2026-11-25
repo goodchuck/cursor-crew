@@ -10,10 +10,10 @@
  *
  * 겉모습은 shared/skins.ts, 기능은 actions.ts, 글자는 shared/i18n.ts 가 맡는다.
  */
-import { MAX_CREW, HINT_SEEN_KEY, DEFAULTS, MENU_KEY_SPEC, memoKey, type MenuItem, type MenuKey, type Settings, type Memo } from "@src/shared/settings";
-import { KEY_LABEL, type T } from "@src/shared/i18n";
+import { MAX_CREW, HINT_SEEN_KEY, DEFAULTS, MENU_KEY_SPEC, memoKey, type MenuItem, type MenuKey, type Settings, type Memo, type Task } from "@src/shared/settings";
+import { KEY_LABEL, type Lang, type T } from "@src/shared/i18n";
 import { getSkin, type Skin, type SkinBody } from "@src/shared/skins";
-import { ACTIONS, itemHint, itemName, type ActionHost, type Mods, type Point } from "./actions";
+import { ACTIONS, itemHint, selectedText, taskName, type ActionHost, type Mods, type Point, type RunCtx } from "./actions";
 import { CSS } from "./styles";
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
@@ -57,11 +57,23 @@ export interface CrewOptions {
   mouse: Point | null;
   images: (string | null)[] | null;
   t: T;
+  lang: Lang;
   dark: boolean;
+}
+
+/** 펫 옆에 뜨는 창: 메모장 · 기능 메뉴 · 검색어 입력. 한 번에 하나만 */
+interface Panel {
+  kind: "memo" | "menu" | "ask";
+  el: HTMLDivElement;
+  /** 닫을 때 할 일(메모 저장, 입력 취소) */
+  flush: () => void;
+  /** 메뉴: 페이지에서 친 키(숫자·Esc)를 받아 처리했으면 true */
+  onKey?: (e: KeyboardEvent) => boolean;
 }
 
 export class Crew implements ActionHost {
   readonly t: T;
+  readonly lang: Lang;
   mouse: Point | null;
   private cfg: Settings;
   private size: number;
@@ -71,7 +83,7 @@ export class Crew implements ActionHost {
   private lastMove = performance.now();
   private lastEv = 0;
   private visible: boolean;
-  private panel: { el: HTMLDivElement; flush: () => void } | null = null;
+  private panel: Panel | null = null;
   private hint: { el: HTMLDivElement; until: number } | null = null;
   private hasMemo = false;
   private hot: Pet | null = null;
@@ -83,9 +95,10 @@ export class Crew implements ActionHost {
   private dead = false;
   private off: (() => void)[] = [];
 
-  constructor({ cfg, mouse, images, t, dark }: CrewOptions) {
+  constructor({ cfg, mouse, images, t, lang, dark }: CrewOptions) {
     this.cfg = cfg;
     this.t = t;
+    this.lang = lang;
     this.size = clamp(+cfg.size || 36, 20, 72);
     this.key = MENU_KEY_SPEC[cfg.menuKey] ? cfg.menuKey : DEFAULTS.menuKey;
     this.mouse = mouse;
@@ -144,9 +157,10 @@ export class Crew implements ActionHost {
     const spark = h("div", { class: "spark", text: "✦" });
     Object.assign(spark.style, { left: s * 0.3 + "px", top: -s * 1.15 + "px" });
     // 이름표: 메뉴 키를 누르고 있을 때만 보인다. 이웃 펫과 겹치지 않게 위·아래로 번갈아 둔다
-    const dot = h("span", { class: "ldot" });
+    // 동그라미 안 숫자 = 키를 누른 채 칠 숫자. 기능이 여러 개면 이름 뒤에 ▾
+    const dot = h("span", { class: "ldot", text: String(i + 1) });
     dot.style.background = color;
-    const label = h("div", { class: "label " + (i % 2 ? "below" : "above") }, dot, h("span", { text: itemName(item, t) }));
+    const label = h("div", { class: "label " + (i % 2 ? "below" : "above") }, dot, h("span", { text: taskName(item, t) + (item.more?.length ? " ▾" : "") }));
     label.style.setProperty("--s", s + "px");
     const el = h("div", { class: "pet" }, body.el as Node, hit, spark, label);
     el.style.setProperty("--glow", color);
@@ -172,7 +186,7 @@ export class Crew implements ActionHost {
     hit.addEventListener("click", (e) => {
       swallow(e);
       if (!this.armed) return;
-      this.run(pet, e);
+      this.run(pet, this.modsOf(e));
     });
     this.root.appendChild(el);
     return pet;
@@ -199,8 +213,8 @@ export class Crew implements ActionHost {
     const n = Math.min(this.pets.length, 3);
     const vw = document.documentElement.clientWidth;
     const R = s * 1.25 + 22; // 커서에서 펫 가운데까지
-    const LABEL_W = 116; // 이름표 최대 폭 + 여백
-    const HALF = 58; // 위/아래 이름표 폭의 절반
+    const LABEL_W = 156; // 이름표 최대 폭 + 여백
+    const HALF = 78; // 위/아래 이름표 폭의 절반
     // 기본: 위쪽 부채꼴(왼쪽 위 · 위 · 오른쪽 위). 왼쪽/오른쪽 끝이면 반대쪽으로 벌어지는 4분의 1 부채꼴
     const WIDE: Record<number, number[]> = { 1: [-90], 2: [-130, -50], 3: [-150, -90, -30] };
     const TOWARD_RIGHT: Record<number, number[]> = { 1: [-60], 2: [-80, -20], 3: [-90, -45, 0] };
@@ -233,6 +247,8 @@ export class Crew implements ActionHost {
     const s = this.size;
     const mouse = this.mouse!;
     // 메뉴 키를 누르고 있는 동안은 커서 둘레의 제 자리로 빠르게 모인다(클릭할 수 있게). 마우스를 움직여도 자리는 그대로
+    // 펫 메뉴가 열려 있는 동안은 제자리에서 기다린다
+    if (this.panel?.kind === "menu") return { x: pet.x, y: pet.y, hold: true };
     if (this.armed) return pet.slot ? { x: pet.slot.x, y: pet.slot.y, k: 260 } : { x: pet.x, y: pet.y, hold: true };
     // 마우스가 천천히 다가오거나 바로 위에 오면 도망가지 않고 그 자리에 멈춘다.
     // 빠르게 지나가는 건 이동으로 보고 그냥 따라간다. 충분히 멀어지면 다시 따라간다.
@@ -279,7 +295,7 @@ export class Crew implements ActionHost {
   // 펫이 아닌 곳을 누르면 페이지 기본 동작은 그대로 두고, 열린 메모장만 닫는다
   private onPageDown(e: PointerEvent) {
     if (e.composedPath().includes(this.host)) return;
-    if (this.panel) this.closeMemo();
+    if (this.panel) this.closePanel();
   }
 
   // ------------------------------------------------------------ 키
@@ -324,7 +340,24 @@ export class Crew implements ActionHost {
   }
 
   private onKeyDown(e: KeyboardEvent) {
-    if (e.composedPath().includes(this.host)) return; // 메모장 안에서 치는 키
+    if (e.composedPath().includes(this.host)) return; // 메모장·입력창 안에서 치는 키
+    // 펫 메뉴가 열려 있으면 숫자·Esc 는 메뉴가 받는다(페이지로 새지 않게)
+    if (this.panel?.onKey?.(e)) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    // 메뉴 키를 누른 채 1·2·3: 그 번호 펫을 바로 실행(조준 없이). 숫자 자리 키(code)로 봐서 Shift 가 섞여도 된다
+    const num = /^(?:Digit|Numpad)([1-9])$/.exec(e.code);
+    if (this.armed && num && this.pets[+num[1] - 1]) {
+      e.preventDefault();
+      e.stopPropagation();
+      const pet = this.pets[+num[1] - 1];
+      pet.el.classList.add("hot");
+      setTimeout(() => pet.el.classList.remove("hot"), 200);
+      this.run(pet, {});
+      return;
+    }
     if (this.isSpecKey(e.key)) {
       if (!this.present) return; // 펫이 안 보이면 키에 손대지 않는다
       // 윈도우에서 Alt 만 눌렀다 뗄 때 크롬 메뉴로 포커스가 가는 것 방지
@@ -337,7 +370,7 @@ export class Crew implements ActionHost {
     }
     // 메뉴 키를 누른 채 다른 키를 치면(예: Alt+←, Ctrl+C) 단축키로 보고 바로 해제
     this.disarm();
-    if (e.key === "Escape" && this.panel) return this.closeMemo();
+    if (e.key === "Escape" && this.panel) return this.closePanel();
     // 페이지에서 글을 쓰는 중이면 방해하지 않게 흐려진다
     if (isEditable(e.target as Element) || isEditable(document.activeElement)) this.root.classList.add("dim");
   }
@@ -349,12 +382,26 @@ export class Crew implements ActionHost {
     this.disarm();
   }
 
-  /** 펫의 기능 실행. 메뉴 키에 들어 있지 않은 Shift·Ctrl 만 링크 여는 위치를 바꾸는 데 쓴다 */
-  private run(pet: Pet, e: MouseEvent) {
+  /** 클릭의 Shift·Ctrl 중 메뉴 키에 들어 있지 않은 것만 링크 여는 위치를 바꾸는 데 쓴다 */
+  private modsOf(e: MouseEvent): Mods {
     const sp = this.spec;
-    const mods: Mods = { shiftKey: e.shiftKey && !sp.shift, ctrlKey: e.ctrlKey && !sp.ctrl, metaKey: e.metaKey };
-    const fn = ACTIONS[pet.item.action];
-    if (fn) void fn(pet.item, mods, this, { x: pet.x, y: pet.y - this.size });
+    return { shiftKey: e.shiftKey && !sp.shift, ctrlKey: e.ctrlKey && !sp.ctrl, metaKey: e.metaKey };
+  }
+
+  /** 펫 실행: 기능이 하나면 바로, 여러 개면 메뉴를 펼친다. 선택한 글자는 누른 순간 것으로 */
+  private run(pet: Pet, mods: Mods) {
+    const ctx: RunCtx = { sel: selectedText() };
+    if (pet.item.more?.length) return this.openMenu(pet, ctx);
+    this.runTask(pet.item, mods, this.petTop(pet), ctx);
+  }
+
+  private runTask(task: Task, mods: Mods, at: Point, ctx: RunCtx) {
+    const fn = ACTIONS[task.action];
+    if (fn) void fn(task, mods, this, at, ctx);
+  }
+
+  private petTop(pet: Pet): Point {
+    return { x: pet.x, y: pet.y - this.size };
   }
 
   // ------------------------------------------------------------ 처음 안내
@@ -455,7 +502,7 @@ export class Crew implements ActionHost {
   // ------------------------------------------------------------ 메모
   /** 같은 탭에서 다른 글·영상으로 넘어갔을 때: 열린 메모장은 원래 페이지에 저장하고 닫은 뒤 표시를 새로 */
   onNavigate() {
-    this.closeMemo();
+    this.closePanel();
     void this.refreshMemo();
   }
 
@@ -477,8 +524,9 @@ export class Crew implements ActionHost {
     }
   }
 
-  async openMemo(at: Point, item: MenuItem) {
-    if (this.panel) return this.closeMemo();
+  async openMemo(at: Point, item: Task) {
+    if (this.panel?.kind === "memo") return this.closePanel();
+    this.closePanel();
     const t = this.t;
     const key = memoKey();
     const got = await chrome.storage.local.get(key);
@@ -490,11 +538,11 @@ export class Crew implements ActionHost {
     const p = h(
       "div",
       { class: "panel" },
-      h("div", { class: "ph" }, h("b", { text: itemName(item, t) }), h("span", { class: "where", text: location.hostname + location.pathname }), close),
+      h("div", { class: "ph" }, h("b", { text: taskName(item, t) }), h("span", { class: "where", text: location.hostname + location.pathname }), close),
       ta,
       h("div", { class: "pf" }, st, all),
     );
-    p.style.setProperty("--c", item.color);
+    p.style.setProperty("--c", (item as MenuItem).color || this.pets.find((x) => x.item.action === "memo" || x.item.more?.includes(item))?.color || DEFAULTS.crew[2].color);
     ta.value = memo?.text || "";
     const vw = document.documentElement.clientWidth;
     p.style.left = clamp(at.x - 150, 8, vw - 308) + "px";
@@ -502,7 +550,7 @@ export class Crew implements ActionHost {
     // 메모장에서 치는 키가 페이지 단축키(예: 유튜브 k, 깃허브 s)로 새지 않게
     for (const type of ["keydown", "keyup", "keypress"])
       p.addEventListener(type, (e) => {
-        if ((e as KeyboardEvent).key === "Escape") this.closeMemo();
+        if ((e as KeyboardEvent).key === "Escape") this.closePanel();
         e.stopPropagation();
       });
     p.addEventListener("pointerdown", (e) => e.stopPropagation());
@@ -518,16 +566,16 @@ export class Crew implements ActionHost {
       clearTimeout(timer);
       timer = window.setTimeout(save, 350);
     });
-    close.addEventListener("click", () => this.closeMemo());
+    close.addEventListener("click", () => this.closePanel());
     all.addEventListener("click", () => chrome.runtime.sendMessage({ type: "crew:options", hash: "memos" }));
     this.root.appendChild(p);
     this.root.classList.add("active");
-    this.panel = { el: p, flush: () => (clearTimeout(timer), void save()) };
+    this.panel = { kind: "memo", el: p, flush: () => (clearTimeout(timer), void save()) };
     this.disarm();
     ta.focus();
   }
 
-  private closeMemo() {
+  private closePanel() {
     if (!this.panel) return;
     const pn = this.panel;
     this.panel = null;
@@ -536,10 +584,98 @@ export class Crew implements ActionHost {
     this.root.classList.remove("active");
   }
 
+  // ------------------------------------------------------------ 펫 메뉴(기능이 여러 개인 펫)
+  private openMenu(pet: Pet, ctx: RunCtx) {
+    this.closePanel();
+    const t = this.t;
+    const tasks: Task[] = [pet.item, ...(pet.item.more || [])];
+    const at = this.petTop(pet);
+    const pick = (i: number, mods: Mods) => {
+      const task = tasks[i];
+      if (!task) return;
+      this.closePanel();
+      this.runTask(task, mods, at, ctx);
+    };
+    const rows = tasks.map((task, i) => {
+      const b = h("button", { class: "mi", type: "button" }, h("kbd", { text: String(i + 1) }), h("span", { class: "mn", text: taskName(task, t) }), h("span", { class: "mh", text: itemHint(task, t) }));
+      b.addEventListener("click", (e) => pick(i, this.modsOf(e)));
+      return b;
+    });
+    const m = h("div", { class: "menu" }, ...rows, h("div", { class: "mf", text: t("menu.hint") }));
+    m.style.setProperty("--c", pet.color);
+    // 메뉴를 눌러도 페이지에서 고른 글자가 풀리지 않게
+    m.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+    m.addEventListener("mousedown", (e) => e.preventDefault());
+    this.root.appendChild(m);
+    // 펫 오른쪽에(자리가 없으면 왼쪽에)
+    const s = this.size;
+    const vw = document.documentElement.clientWidth;
+    const w = m.offsetWidth;
+    const hgt = m.offsetHeight;
+    const right = pet.x + s * 0.6 + 8;
+    m.style.left = (right + w < vw - 8 ? right : Math.max(8, pet.x - s * 0.6 - 8 - w)) + "px";
+    m.style.top = clamp(pet.y - s - 6, 8, innerHeight - hgt - 8) + "px";
+    this.root.classList.add("active");
+    this.panel = {
+      kind: "menu",
+      el: m,
+      flush: () => {},
+      onKey: (e) => {
+        if (e.key === "Escape") {
+          this.closePanel();
+          return true;
+        }
+        const n = /^(?:Digit|Numpad)([1-9])$/.exec(e.code);
+        if (n && tasks[+n[1] - 1]) {
+          pick(+n[1] - 1, {});
+          return true;
+        }
+        return false;
+      },
+    };
+  }
+
+  // ------------------------------------------------------------ 검색어 입력(선택한 글자가 없을 때)
+  askText(at: Point, title: string): Promise<string | null> {
+    this.closePanel();
+    const t = this.t;
+    return new Promise((resolve) => {
+      let done = false;
+      const finish = (v: string | null) => {
+        if (done) return;
+        done = true;
+        resolve(v && v.trim() ? v.trim() : null);
+      };
+      const input = h("input", { type: "text", placeholder: t("ask.placeholder"), "aria-label": title });
+      const p = h("div", { class: "ask" }, h("b", { text: title }), input, h("small", { text: t("ask.hint") }));
+      for (const type of ["keydown", "keyup", "keypress"])
+        p.addEventListener(type, (e) => {
+          const ke = e as KeyboardEvent;
+          if (type === "keydown" && ke.key === "Enter" && !ke.isComposing) {
+            finish(input.value);
+            this.closePanel();
+          } else if (type === "keydown" && ke.key === "Escape") this.closePanel();
+          e.stopPropagation();
+        });
+      p.addEventListener("pointerdown", (e) => e.stopPropagation());
+      const vw = document.documentElement.clientWidth;
+      p.style.left = clamp(at.x - 130, 8, vw - 268) + "px";
+      p.style.top = clamp(at.y - 96, 8, innerHeight - 100) + "px";
+      this.root.appendChild(p);
+      this.root.classList.add("active");
+      this.panel = { kind: "ask", el: p, flush: () => finish(null) };
+      this.disarm();
+      input.focus();
+    });
+  }
+
   destroy() {
     this.dead = true;
     cancelAnimationFrame(this.raf);
-    this.closeMemo();
+    this.closePanel();
     for (const off of this.off) off();
     this.host.remove();
   }

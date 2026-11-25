@@ -3,7 +3,7 @@
     "message": "Cursor Crew"
   },
   "extDescription": {
-    "message": "작은 도트 펫들이 마우스를 따라다녀요. Alt를 누른 채 펫을 클릭하면 자주 가는 링크 열기, URL 복사, 페이지 메모 같은 기능이 바로 실행돼요."
+    "message": "작은 도트 펫들이 마우스를 따라다녀요. Alt를 누른 채 펫을 클릭하면 고른 글자 검색, 링크 열기, URL 복사, 페이지 메모 같은 기능이 바로 실행돼요."
   },
   "actionTitle": {
     "message": "Cursor Crew 설정 (켜기/끄기: Alt+Shift+C)"

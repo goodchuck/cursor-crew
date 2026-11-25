@@ -22,8 +22,8 @@ export const CSS = `
 .root.armed:not(.dim):not(.hide) .hit{pointer-events:auto;cursor:pointer}
 .root.armed .pet.hot>:first-child{filter:drop-shadow(0 0 3px var(--glow)) drop-shadow(0 0 1px var(--glow))}
 /* 이름표: 메뉴 키를 누르고 있는 동안만. 짧게 톡 친 키에는 깜빡이지 않게 살짝 늦게 나타난다 */
-.label{position:absolute;left:0;display:flex;align-items:center;gap:5px;max-width:110px;transform:translateX(-50%);
-  background:var(--surface);color:var(--text);font:600 11.5px/1 ${FONT};padding:4px 7px 4px 6px;border-radius:999px;white-space:nowrap;
+.label{position:absolute;left:0;display:flex;align-items:center;gap:5px;max-width:150px;transform:translateX(-50%);
+  background:var(--surface);color:var(--text);font:600 11.5px/1 ${FONT};padding:3px 8px 3px 3px;border-radius:999px;white-space:nowrap;
   box-shadow:0 2px 8px var(--shadow),0 0 0 1px var(--edge);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .12s,visibility 0s .12s}
 .label span:last-child{overflow:hidden;text-overflow:ellipsis}
 .label.above{top:calc(var(--s) * -1 - 26px)}
@@ -35,7 +35,7 @@ export const CSS = `
 .pet.side-right .label{top:calc(var(--s) * -0.5 - 10px);left:calc(var(--s) * 0.55 + 6px);transform:none}
 .pet.al-start .label{left:calc(var(--s) * -0.55);transform:none}
 .pet.al-end .label{left:calc(var(--s) * 0.55);transform:translateX(-100%)}
-.ldot{width:7px;height:7px;border-radius:50%;flex:none}
+.ldot{width:15px;height:15px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font:800 9.5px/1 ${FONT};text-shadow:0 0 2px rgba(0,0,0,.35)}
 .root.armed:not(.dim):not(.hide) .label{opacity:1;visibility:visible;transition:opacity .12s .08s,visibility 0s .08s}
 .root.armed .pet.hot .label{background:var(--glow);color:#fff}
 .badge{position:absolute;width:7px;height:7px;border-radius:50%;background:#A259FF;box-shadow:0 0 0 1.5px var(--surface)}
@@ -59,4 +59,21 @@ export const CSS = `
   font:inherit;font-size:14px;color:var(--text);background:var(--surface)}
 .panel textarea::placeholder{color:var(--muted)}
 .panel .pf{display:flex;align-items:center;justify-content:space-between;padding:6px 8px 8px 12px;border-top:1px solid var(--divider);color:var(--muted);font-size:12px}
+
+/* 펫 메뉴: 기능이 여러 개인 펫을 누르면 펼쳐진다 */
+.menu{position:absolute;min-width:190px;max-width:260px;pointer-events:auto;background:var(--surface);color:var(--text);border-radius:12px;padding:5px;
+  box-shadow:0 10px 30px var(--shadow),0 0 0 1px var(--edge);font:13px/1.3 ${FONT};border-top:3px solid var(--c)}
+.menu .mi{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;border:0;background:none;color:inherit;font:inherit;text-align:left;padding:7px 8px;border-radius:8px;cursor:pointer}
+.menu .mi:hover{background:var(--hover)}
+.menu kbd{flex:none;width:18px;height:18px;display:flex;align-items:center;justify-content:center;border-radius:5px;background:var(--hover);color:var(--muted);font:700 11px/1 ${FONT}}
+.menu .mi:hover kbd{background:var(--c);color:#fff}
+.menu .mn{font-weight:600;white-space:nowrap}
+.menu .mh{margin-left:auto;padding-left:10px;color:var(--muted);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px}
+.menu .mf{padding:6px 8px 3px;border-top:1px solid var(--divider);margin-top:3px;color:var(--muted);font-size:11px}
+/* 검색어 입력: 링크에 {sel} 이 있는데 고른 글자가 없을 때 */
+.ask{position:absolute;width:260px;box-sizing:border-box;pointer-events:auto;background:var(--surface);color:var(--text);border-radius:12px;padding:10px 12px;
+  box-shadow:0 10px 30px var(--shadow),0 0 0 1px var(--edge);font:13px/1.4 ${FONT};display:grid;gap:6px}
+.ask input{box-sizing:border-box;width:100%;border:1px solid var(--divider);border-radius:8px;padding:7px 9px;font:inherit;font-size:14px;color:var(--text);background:var(--surface);outline:0}
+.ask input:focus{border-color:#5AB8F0}
+.ask small{color:var(--muted);font-size:11.5px}
 `;

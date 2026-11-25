@@ -1,6 +1,6 @@
 // background · content · options 가 함께 쓰는 설정 모양과 기본값.
 
-export type ActionId = "link" | "memo" | "copy" | "top";
+export type ActionId = "link" | "memo" | "copy" | "copyMd" | "top" | "bottom" | "back" | "reload" | "dupTab";
 export type SkinId = "slime" | "cursor" | "image";
 /** 누르고 있는 동안만 펫이 멈추고 클릭되는 키(조합) */
 export type MenuKey = "Alt" | "Control" | "Shift" | "AltShift";
@@ -16,12 +16,20 @@ export const MENU_KEY_SPEC: Record<MenuKey, { alt: boolean; ctrl: boolean; shift
 export type ThemePref = "system" | "light" | "dark";
 export type LangPref = "auto" | "ko" | "en";
 
-/** 펫 한 마리 = 기능 하나. color 는 펫 색, name 이 비어 있으면 기능 이름(언어에 맞춰)을 보여 준다. */
-export interface MenuItem {
+/**
+ * 기능 하나. name 이 비어 있으면 프리셋 이름이나 기능 이름(언어에 맞춰)을 보여 준다.
+ * link 의 url 에는 {sel}(선택한 글자, %s 도 됨) · {url}(지금 주소) · {title} · {host} 를 넣을 수 있다.
+ */
+export interface Task {
   name: string;
-  color: string;
   action: ActionId;
   url?: string;
+}
+
+/** 펫 한 마리: 대표 기능 + 더 넣은 기능(more). more 가 있으면 펫을 클릭할 때 작은 메뉴가 펼쳐진다 */
+export interface MenuItem extends Task {
+  color: string;
+  more?: Task[];
 }
 
 /** chrome.storage.sync 에 저장되는 설정 */
@@ -54,17 +62,38 @@ export const DEFAULTS: Settings = {
   imagePixelated: false,
   theme: "system",
   lang: "auto",
-  // 기본은 3마리: 화면을 덜 가리게
+  // 기본은 3마리: 검색(메뉴로 여러 검색), 페이지 도구(메뉴), 메모. 이름은 비워 두면 프리셋·기능 이름이 언어에 맞춰 뜬다
   crew: [
-    { name: "GitHub", color: "#5AB8F0", action: "link", url: "https://github.com" },
-    { name: "YouTube", color: "#F2766B", action: "link", url: "https://www.youtube.com" },
+    {
+      name: "",
+      color: "#5AB8F0",
+      action: "link",
+      url: "https://www.google.com/search?q={sel}",
+      more: [
+        { name: "", action: "link", url: "https://www.youtube.com/results?search_query={sel}" },
+        { name: "", action: "link", url: "https://ko.wikipedia.org/w/index.php?search={sel}" },
+      ],
+    },
+    {
+      name: "",
+      color: "#F2766B",
+      action: "copy",
+      more: [
+        { name: "", action: "copyMd" },
+        { name: "", action: "top" },
+        { name: "", action: "bottom" },
+        { name: "", action: "dupTab" },
+      ],
+    },
     { name: "", color: "#5BD16A", action: "memo" },
   ],
 };
 
 /** 메뉴에 넣을 수 있는 기능. 새 기능: 여기 + content/actions.ts + i18n 의 action.<id> */
-export const ACTION_IDS: ActionId[] = ["link", "memo", "copy", "top"];
-export const ACTION_NEEDS_URL: Record<ActionId, boolean> = { link: true, memo: false, copy: false, top: false };
+export const ACTION_IDS: ActionId[] = ["link", "memo", "copy", "copyMd", "top", "bottom", "back", "reload", "dupTab"];
+export const ACTION_NEEDS_URL: Record<ActionId, boolean> = { link: true, memo: false, copy: false, copyMd: false, top: false, bottom: false, back: false, reload: false, dupTab: false };
+/** 펫 하나에 더 넣을 수 있는 기능 수(대표 기능 빼고). 메뉴는 숫자 키 1~6 으로도 고른다 */
+export const MAX_MORE = 5;
 
 /** 새 펫에 줄 색(아직 안 쓴 것부터) */
 export const COLORS = ["#5AB8F0", "#F2766B", "#5BD16A", "#B48CF2", "#F2B84B", "#F28AC0", "#4CC9C0", "#8C9BF2"];
@@ -90,6 +119,10 @@ export async function loadSettings(): Promise<Settings> {
   if (!MENU_KEYS.includes(s.menuKey)) s.menuKey = DEFAULTS.menuKey;
   // 예전(최대 6마리)에 더 많이 저장해 둔 경우 설정 창에서도 3마리까지만 보이게
   if (Array.isArray(s.crew) && s.crew.length > MAX_CREW) s.crew = s.crew.slice(0, MAX_CREW);
+  // 모르는 기능(다른 버전에서 저장한 것)은 빼고, 더 넣은 기능은 MAX_MORE 개까지
+  const known = (t: Task) => ACTION_IDS.includes(t?.action);
+  s.crew = (Array.isArray(s.crew) ? s.crew : DEFAULTS.crew).filter(known).map((m) => ({ ...m, more: Array.isArray(m.more) ? m.more.filter(known).slice(0, MAX_MORE) : undefined }));
+  if (!s.crew.length) s.crew = DEFAULTS.crew;
   // 내 이미지 스킨을 꺼 둔 동안은 예전에 골라 둔 사람도 슬라임으로(올려 둔 그림은 지우지 않음)
   if (!CUSTOM_IMAGES && s.skin === "image") s.skin = DEFAULTS.skin;
   return s;
