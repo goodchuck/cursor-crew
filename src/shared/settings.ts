@@ -52,6 +52,10 @@ export interface Settings {
   crew: MenuItem[];
   /** 따라오는 모양. free: 줄줄이 뒤따르며 서로 밀어냄, line: 커서 옆 제자리에 한 줄로 서서 서로 영향 없이 같이 움직임 */
   formation: Formation;
+  /** 메뉴 키를 누른 채 치면 정렬 모드를 바꾸는 키(KeyboardEvent.code, 빈 값 = 안 씀). 기본은 숫자 1 왼쪽 키 */
+  lineKey: string;
+  /** 메뉴 키를 누른 채 1·2·3 으로 펫 실행(사이트 단축키·리눅스 탭 이동과 겹치면 끌 수 있게) */
+  numberKeys: boolean;
 }
 
 export type Formation = "free" | "line";
@@ -68,6 +72,8 @@ export const DEFAULTS: Settings = {
   theme: "system",
   lang: "auto",
   formation: "free",
+  lineKey: "Backquote",
+  numberKeys: true,
   // 기본은 3마리: 검색(메뉴로 여러 검색), 페이지 도구(메뉴), 메모. 이름은 비워 두면 프리셋·기능 이름이 언어에 맞춰 뜬다
   crew: [
     {
@@ -132,6 +138,8 @@ export async function loadSettings(): Promise<Settings> {
   // 내 이미지 스킨을 꺼 둔 동안은 예전에 골라 둔 사람도 슬라임으로(올려 둔 그림은 지우지 않음)
   if (!CUSTOM_IMAGES && s.skin === "image") s.skin = DEFAULTS.skin;
   if (!FORMATIONS.includes(s.formation)) s.formation = DEFAULTS.formation;
+  if (typeof s.lineKey !== "string") s.lineKey = DEFAULTS.lineKey;
+  s.numberKeys = s.numberKeys !== false;
   return s;
 }
 

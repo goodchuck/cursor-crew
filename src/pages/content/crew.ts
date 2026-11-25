@@ -11,7 +11,8 @@
  * 겉모습은 shared/skins.ts, 기능은 actions.ts, 글자는 shared/i18n.ts 가 맡는다.
  */
 import { MAX_CREW, HINT_SEEN_KEY, DEFAULTS, MENU_KEY_SPEC, memoKey, type Formation, type MenuItem, type MenuKey, type Settings, type Memo, type Task } from "@src/shared/settings";
-import { KEY_LABEL, type Lang, type T } from "@src/shared/i18n";
+import type { Lang, T } from "@src/shared/i18n";
+import { IS_MAC, menuKeyLabel } from "@src/shared/platform";
 import { getSkin, type Skin, type SkinBody } from "@src/shared/skins";
 import { ACTIONS, itemHint, selectedText, taskName, type ActionHost, type Mods, type Point, type RunCtx } from "./actions";
 import { CSS } from "./styles";
@@ -190,6 +191,11 @@ export class Crew implements ActionHost {
       if (!this.armed) return;
       this.run(pet, this.modsOf(e));
     });
+    // 맥에서 Control+클릭은 오른쪽 클릭이라 click 이 오지 않는다. 메뉴 키가 Control 이면 여기서 실행
+    hit.addEventListener("contextmenu", (e) => {
+      swallow(e);
+      if (this.armed && IS_MAC && e.ctrlKey && this.spec.ctrl) this.run(pet, this.modsOf(e));
+    });
     this.root.appendChild(el);
     return pet;
   }
@@ -353,8 +359,8 @@ export class Crew implements ActionHost {
       e.stopPropagation();
       return;
     }
-    // 메뉴 키를 누른 채 ` (숫자 1 왼쪽 키, 한 손으로 닿게): 따라다니기 ↔ 한 줄 정렬 바꾸기(설정에 저장). 0 도 같은 일
-    if (this.armed && (e.code === "Backquote" || e.code === "Digit0")) {
+    // 메뉴 키를 누른 채 정렬 키(기본 `: 숫자 1 왼쪽, 한 손으로 닿게): 따라다니기 ↔ 한 줄 정렬 바꾸기(설정에 저장)
+    if (this.armed && this.cfg.lineKey && e.code === this.cfg.lineKey) {
       e.preventDefault();
       e.stopPropagation();
       this.toggleFormation();
@@ -362,7 +368,7 @@ export class Crew implements ActionHost {
     }
     // 메뉴 키를 누른 채 1·2·3: 그 번호 펫을 바로 실행(조준 없이). 숫자 자리 키(code)로 봐서 Shift 가 섞여도 된다
     const num = /^Digit([1-9])$/.exec(e.code);
-    if (this.armed && num && this.pets[+num[1] - 1]) {
+    if (this.armed && this.cfg.numberKeys && num && this.pets[+num[1] - 1]) {
       e.preventDefault();
       e.stopPropagation();
       const pet = this.pets[+num[1] - 1];
@@ -441,7 +447,7 @@ export class Crew implements ActionHost {
     const b = h("div", { class: "bubble" });
     // "{key}" 자리에 키 모양을 넣는다
     const [before, after] = t("hint.key1", { key: "\u0000" }).split("\u0000");
-    b.append(before, h("kbd", { text: KEY_LABEL[this.key] }), after, h("br"), t("hint.key2"));
+    b.append(before, h("kbd", { text: menuKeyLabel(this.key) }), after, h("br"), t("hint.key2"));
     this.root.appendChild(b);
     this.hint = { el: b, until: performance.now() + 9000 };
   }

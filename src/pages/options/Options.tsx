@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { CUSTOM_IMAGES, FORMATIONS, HINT_SEEN_KEY, reorderImages, saveImage, type Formation, type LangPref, type MenuItem, type MenuKey, type Settings, type ThemePref } from "@src/shared/settings";
 import { resolveLang, type MsgKey } from "@src/shared/i18n";
+import { IS_MAC, menuKeyLabel } from "@src/shared/platform";
+import { KeyRecorder } from "./components/KeyRecorder";
 import { getSkin } from "@src/shared/skins";
 import { itemName } from "@src/pages/content/actions";
 import { useDocumentLang, useHashJump, useImages, useMemos, useSettings, useT, useThemeClass } from "./hooks";
@@ -67,10 +69,10 @@ export default function Options() {
   const firstImage = images.find(Boolean) || null;
   const names = s.crew.map((item) => itemName(item, t));
   const keyOptions: [MenuKey, string][] = [
-    ["Alt", "Alt"],
-    ["Control", "Ctrl"],
-    ["Shift", "Shift"],
-    ["AltShift", t("opt.keyAltShiftNote")],
+    ["Alt", menuKeyLabel("Alt")],
+    ["Control", menuKeyLabel("Control")],
+    ["Shift", menuKeyLabel("Shift")],
+    ["AltShift", IS_MAC ? menuKeyLabel("AltShift") : t("opt.keyAltShiftNote")],
   ];
 
   return (
@@ -122,6 +124,15 @@ export default function Options() {
             className="w-auto"
           />
           <span className="text-xs text-zinc-400">{t("opt.formationHelp")}</span>
+        </label>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <span className="whitespace-nowrap">{t("opt.lineKey")}</span>
+          <KeyRecorder value={s.lineKey} onChange={(lineKey) => update({ lineKey })} prefix={menuKeyLabel(s.menuKey)} t={t} />
+        </div>
+        <label className="mt-2 flex flex-wrap items-center gap-2">
+          <input type="checkbox" className="accent-brand" checked={s.numberKeys} onChange={(e) => update({ numberKeys: e.target.checked })} />
+          <span>{t("opt.numberKeys")}</span>
+          <span className="text-xs text-zinc-400">{t("opt.numberKeysHelp")}</span>
         </label>
       </Section>
 

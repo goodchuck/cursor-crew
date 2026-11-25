@@ -1,3 +1,4 @@
+import { forPlatform } from "./platform";
 // UI 문자열 사전. 화면에 보이는 글자는 전부 여기서 가져온다(하드코딩 금지).
 // 확장 이름·설명·명령 이름처럼 manifest 에 들어가는 것만 public/_locales 에 있다.
 import type { LangPref } from "./settings";
@@ -47,7 +48,13 @@ const ko = {
   "opt.formation": "따라오는 모양",
   "opt.formation.free": "자유롭게 (줄줄이 뒤따름)",
   "opt.formation.line": "한 줄 정렬 (서로 안 부딪힘)",
-  "opt.formationHelp": "키를 누른 채 숫자 1 왼쪽 키(`)를 치면 페이지에서 바로 바꿀 수 있어요.",
+  "opt.formationHelp": "메뉴 키를 누른 채 아래 정렬 키를 치면 페이지에서 바로 바꿀 수 있어요.",
+  "opt.lineKey": "정렬 바꾸는 키",
+  "opt.lineKeyPress": "바꿀 키를 누르세요…",
+  "opt.lineKeyBad": "그 키는 쓸 수 없어요",
+  "opt.lineKeyOff": "안 씀",
+  "opt.numberKeys": "1·2·3으로 펫 실행",
+  "opt.numberKeysHelp": "사이트 단축키(Alt+1 등)나 리눅스 탭 이동과 겹치면 꺼 두세요.",
   "toast.bottom": "↓ 맨 아래로",
   "toast.copiedMd": "✓ [제목](주소) 복사됨",
   "toast.noBack": "뒤로 갈 페이지가 없어요",
@@ -124,7 +131,7 @@ const ko = {
   "opt.hintAgainDone": "다음에 페이지를 열면 안내가 다시 떠요",
 
   "opt.menu": "펫과 기능",
-  "opt.menuHelp": "펫은 최대 3마리예요. 펫 하나에 기능을 여러 개 넣으면 클릭할 때 작은 메뉴가 펼쳐져요. 키를 누른 채 1·2·3을 치면 펫을 조준하지 않아도 되고, 숫자 1 왼쪽 키(`)를 치면 펫들이 한 줄로 정렬돼요(다시 치면 풀림). 링크는 Shift를 같이 누르면 지금 탭에서, Ctrl을 같이 누르면 뒤쪽 탭으로 열려요.",
+  "opt.menuHelp": "펫은 최대 3마리예요. 펫 하나에 기능을 여러 개 넣으면 클릭할 때 작은 메뉴가 펼쳐져요. 키를 누른 채 1·2·3을 치면 펫을 조준하지 않아도 되고, 정렬 키(기본: 숫자 1 왼쪽 `)를 치면 펫들이 한 줄로 정렬돼요(다시 치면 풀림). 링크는 Shift를 같이 누르면 지금 탭에서, Ctrl을 같이 누르면 뒤쪽 탭으로 열려요.",
   "opt.pet": "펫 {n}",
   "opt.preset": "바로 쓰기",
   "opt.presetCustom": "직접 입력",
@@ -204,7 +211,13 @@ const en: Dict = {
   "opt.formation": "Following style",
   "opt.formation.free": "Free (trail behind each other)",
   "opt.formation.line": "Lined up (never bump)",
-  "opt.formationHelp": "Hold the key and press ` (left of 1) to switch right on the page.",
+  "opt.formationHelp": "Hold the menu key and press the line-up key below to switch right on the page.",
+  "opt.lineKey": "Line-up key",
+  "opt.lineKeyPress": "Press a key…",
+  "opt.lineKeyBad": "That key can't be used",
+  "opt.lineKeyOff": "None",
+  "opt.numberKeys": "Run pets with 1, 2, 3",
+  "opt.numberKeysHelp": "Turn off if it clashes with a site's shortcuts (like Alt+1) or tab switching on Linux.",
   "toast.bottom": "↓ To bottom",
   "toast.copiedMd": "✓ Copied as [title](url)",
   "toast.noBack": "Nowhere to go back to",
@@ -273,7 +286,7 @@ const en: Dict = {
   "opt.hintAgainDone": "The tip will show on the next page you open",
 
   "opt.menu": "Pets & actions",
-  "opt.menuHelp": "Up to 3 pets. Give a pet several actions and clicking it opens a small menu. Hold the key and press 1, 2 or 3 to skip aiming, or ` (left of 1) to line the pets up (press again to undo). Add Shift to open a link in this tab, or Ctrl for a background tab.",
+  "opt.menuHelp": "Up to 3 pets. Give a pet several actions and clicking it opens a small menu. Hold the key and press 1, 2 or 3 to skip aiming, or the line-up key (default: ` left of 1) to line the pets up (press again to undo). Add Shift to open a link in this tab, or Ctrl for a background tab.",
   "opt.pet": "Pet {n}",
   "opt.preset": "Quick pick",
   "opt.presetCustom": "Custom",
@@ -327,8 +340,6 @@ export type T = (key: MsgKey, vars?: Record<string, string | number>) => string;
 
 export function makeT(lang: Lang): T {
   const dict = DICTS[lang];
-  return (key, vars) => (dict[key] ?? ko[key]).replace(/\{(\w+)\}/g, (_, k: string) => String(vars?.[k] ?? ""));
+  return (key, vars) => forPlatform(dict[key] ?? ko[key]).replace(/\{(\w+)\}/g, (_, k: string) => String(vars?.[k] ?? ""));
 }
 
-/** 메뉴 키 이름(화면 표시용) */
-export const KEY_LABEL: Record<string, string> = { Alt: "Alt", Control: "Ctrl", Shift: "Shift", AltShift: "Alt+Shift" };

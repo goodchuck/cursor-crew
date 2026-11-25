@@ -65,7 +65,8 @@ pnpm build
   1. <kbd>Alt</kbd>(설정에서 바꿀 수 있음)를 누르고 있으면 펫들이 커서 둘레(위쪽 부채꼴, 화면 끝이면 반대쪽)로 서로 겹치지 않게 모이고, 펫마다 바깥쪽에 기능 이름표가 뜹니다. 마우스를 움직여도 자리는 그대로라 조준하기 쉽습니다. 이때만 펫이 클릭됩니다.
   2. 키를 누른 채 펫을 클릭하면 그 펫의 기능이 바로 실행되고, 펫 위에 짧은 말풍선으로 결과를 알려 줍니다.
   3. 키를 떼면 아무것도 실행되지 않고 원래대로 돌아갑니다.
-  4. 키를 누른 채 <kbd>1</kbd>·<kbd>2</kbd>·<kbd>3</kbd>을 치면 그 번호 펫이 바로 실행됩니다(이름표 동그라미 안 숫자). 숫자 1 왼쪽 키 <kbd>`</kbd>를 치면 **한 줄 정렬 모드**로 바뀝니다: 펫들이 커서 옆 제자리에 나란히 서서, 서로 밀거나 뒤따르지 않고 같이 움직입니다(다시 치면 원래대로, <kbd>0</kbd>도 같음, 설정 창 "따라오는 모양"에서도 바꿈). 다른 키를 치면(예: <kbd>Alt</kbd>+<kbd>←</kbd>) 단축키로 보고 바로 풀립니다.
+  4. 키를 누른 채 <kbd>1</kbd>·<kbd>2</kbd>·<kbd>3</kbd>을 치면 그 번호 펫이 바로 실행됩니다(이름표 동그라미 안 숫자). 숫자 1 왼쪽 키 <kbd>`</kbd>를 치면 **한 줄 정렬 모드**로 바뀝니다: 펫들이 커서 옆 제자리에 나란히 서서, 서로 밀거나 뒤따르지 않고 같이 움직입니다(다시 치면 원래대로, 설정 창 "따라오는 모양"에서도 바꿈). 정렬 키는 설정 창에서 다른 키로 바꿀 수 있고, 1·2·3 실행은 끌 수 있습니다(사이트 단축키·리눅스 탭 이동과 겹칠 때).
+  5. **맥**: 화면의 키 이름이 ⌥ Option·⌃ Control 로 나옵니다. 메뉴 키를 Control 로 두면 맥에서는 Control+클릭이 오른쪽 클릭이라, 펫 위에서는 그 오른쪽 클릭으로 실행합니다. 윈도우의 Alt+숫자 패드(Alt 코드 입력)는 건드리지 않습니다. 다른 키를 치면(예: <kbd>Alt</kbd>+<kbd>←</kbd>) 단축키로 보고 바로 풀립니다.
 - **펫 메뉴**: 펫 하나에 기능을 6개까지 넣을 수 있습니다. 2개 이상이면 이름표에 ▾가 붙고, 펫을 누르면 작은 메뉴가 펼쳐집니다. 메뉴는 키를 떼도 남아 있고, 클릭하거나 숫자 키로 고릅니다(<kbd>Esc</kbd>·바깥 클릭으로 닫기). 메뉴를 눌러도 페이지에서 고른 글자는 풀리지 않습니다.
 - **고른 글자 검색**: 링크 주소에 `{sel}`(또는 `%s`)을 넣으면 고른 글자로 검색합니다. 설정 창의 **바로 쓰기**에서 구글·네이버·유튜브·위키백과·나무위키·영어사전·파파고·이 페이지 번역·웨이백을 고를 수 있습니다. 고른 글자가 없으면 펫 옆에 검색창이 뜹니다. `{url}`(지금 주소), `{title}`, `{host}`도 쓸 수 있습니다.
 - **브라우저 기본 동작과 겹치지 않게**: 키를 누른 채 펫을 클릭할 때만 기본 동작(예: <kbd>Alt</kbd>+클릭 = 링크 다운로드, <kbd>Ctrl</kbd>+클릭 = 새 탭)을 막습니다. 펫이 아닌 곳을 클릭하면 페이지 동작은 그대로입니다. 펫이 화면에 없거나 꺼져 있으면 키에 손대지 않습니다.
@@ -82,7 +83,7 @@ pnpm build
 ### How to use (English)
 
 - Small pixel pets follow your mouse. **Each pet holds your shortcuts** (search selected text, a link, a page memo, copy, page tools), and they **never catch clicks**: clicking on a pet clicks whatever is underneath.
-- A pet with several actions opens a small menu (pick by click or number key). Hold the key and press 1/2/3 to run a pet without aiming, or ` (left of 1) to line the pets up in a fixed row that never bumps (press again to undo).
+- A pet with several actions opens a small menu (pick by click or number key). Hold the key and press 1/2/3 to run a pet without aiming, or ` (left of 1) to line the pets up in a fixed row that never bumps (press again to undo). Both keys can be changed or turned off in settings. On Mac, key names show as ⌥ Option / ⌃ Control.
 - Put `{sel}` in a link to search the selected text (or pick a preset like Google, YouTube or Wikipedia). With nothing selected, a search box pops up next to the pet.
 - **Hold Alt and click a pet** to run its action. While you hold the key the pets fan out around your cursor without overlapping and show name tags; that's the only time they can be clicked.
 - **Releasing the key does nothing**: it just puts the pets back. Pressing another key with it (e.g. Alt+←) cancels right away.
