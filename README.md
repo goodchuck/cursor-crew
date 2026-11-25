@@ -8,7 +8,7 @@
 ```
  ↖ (내 마우스)          Alt 를 누르고 있는 동안
                         ┌ GitHub ┐       ┌ 메모 ┐
-   ▄▄  ▄▄  ▄▄            ▄▄  ▄▄  ▄▄       ← 펫이 멈추고 이름표가 뜸
+   ▄▄  ▄▄  ▄▄            ▄▄  ▄▄  ▄▄       ← 펫이 커서 둘레로 모이고 이름표가 뜸
   █••█ █••█ █••█        █••█ █••█ █••█       그대로 펫을 클릭 = 실행
                             └ YouTube ┘
 ```
@@ -62,7 +62,7 @@ pnpm build
 - **따라다니기**: 마우스를 움직이면 펫들이 줄지어 마우스 뒤쪽으로 처지며 통통 따라오고, 멈추면 마우스 오른쪽 아래(화면 끝이면 반대쪽)에 나란히 앉습니다. 오래 쉬고 있으면 머리 위가 가끔 반짝입니다.
 - **평소에는 투명 인간**: 펫은 클릭·호버를 가로채지 않습니다(`pointer-events: none`). 펫 위를 클릭하면 그 아래 링크·버튼이 눌리고, 커서 모양도 바뀌지 않습니다.
 - **쓰기: <kbd>Alt</kbd>를 누른 채 펫 클릭**
-  1. <kbd>Alt</kbd>(설정에서 바꿀 수 있음)를 누르고 있으면 펫들이 제자리에 멈추고, 펫마다 기능 이름표가 뜹니다. 이때만 펫이 클릭됩니다.
+  1. <kbd>Alt</kbd>(설정에서 바꿀 수 있음)를 누르고 있으면 펫들이 커서 둘레(위쪽 부채꼴, 화면 끝이면 반대쪽)로 서로 겹치지 않게 모이고, 펫마다 바깥쪽에 기능 이름표가 뜹니다. 마우스를 움직여도 자리는 그대로라 조준하기 쉽습니다. 이때만 펫이 클릭됩니다.
   2. 키를 누른 채 펫을 클릭하면 그 펫의 기능이 바로 실행되고, 펫 위에 짧은 말풍선으로 결과를 알려 줍니다.
   3. 키를 떼면 아무것도 실행되지 않고 원래대로 돌아갑니다.
   4. 키를 누른 채 다른 키를 치면(예: <kbd>Alt</kbd>+<kbd>←</kbd>) 단축키로 보고 바로 풀립니다.
@@ -80,7 +80,7 @@ pnpm build
 ### How to use (English)
 
 - Small pixel pets follow your mouse. **Each pet does one thing** (a link, a page memo, copy URL, back to top), and they **never catch clicks**: clicking on a pet clicks whatever is underneath.
-- **Hold Alt and click a pet** to run its action. While you hold the key the pets stop and show name tags; that's the only time they can be clicked.
+- **Hold Alt and click a pet** to run its action. While you hold the key the pets fan out around your cursor without overlapping and show name tags; that's the only time they can be clicked.
 - **Releasing the key does nothing**: it just puts the pets back. Pressing another key with it (e.g. Alt+←) cancels right away.
 - The key can be Alt, Ctrl, Shift or Alt+Shift (settings → **How to use**). Alt+Shift may clash with the Windows input language switch.
 - Browser defaults such as Alt+click (download) or Ctrl+click (new tab) are blocked only when you click a pet while holding the key. If no pet is on screen or the extension is off, the key is left alone.

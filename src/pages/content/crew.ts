@@ -3,7 +3,7 @@
  *
  * 평소에는 펫이 클릭을 전혀 가로채지 않는다(pointer-events: none). 펫 위를 눌러도 아래 페이지가 눌린다.
  * 메뉴 키(기본 Alt, 설정에서 Ctrl·Shift·Alt+Shift)를 누르고 있는 동안만:
- *   - 펫이 제자리에 멈추고, 펫마다 기능 이름표가 뜬다.
+ *   - 펫들이 커서 둘레(기본 위쪽 부채꼴)의 정해진 자리로 모여 서로 겹치지 않게 서고, 펫마다 기능 이름표가 뜬다.
  *   - 펫을 클릭하면 그 펫의 기능이 바로 실행된다.
  * 키를 떼면 아무것도 실행하지 않고 원래대로 돌아간다(keyup 에서는 어떤 기능도 실행하지 않는다).
  * 메뉴 키를 누른 채 다른 키를 치면(단축키) 즉시 해제한다.
@@ -45,7 +45,12 @@ interface Pet {
   vy: number;
   k: number;
   held?: boolean;
+  /** 메뉴 키를 누르고 있는 동안 설 자리(커서 둘레) */
+  slot?: Point;
 }
+
+type Side = "up" | "down" | "left" | "right";
+const SIDES: Side[] = ["up", "down", "left", "right"];
 
 export interface CrewOptions {
   cfg: Settings;
@@ -184,11 +189,51 @@ export class Crew implements ActionHost {
     return { x: p.x + fx * (s * 0.6 + 16 + i * (s + 6)), y: fy > 0 ? p.y + s + 8 : p.y - 10 };
   }
 
-  private targetFor(pet: Pet, w: number): Point & { hold?: boolean } {
+  /**
+   * 메뉴 키를 누른 순간의 커서를 중심으로 펫들을 부채꼴로 벌려 세운다.
+   * 기본은 커서 위쪽(왼쪽 위 · 위 · 오른쪽 위), 화면 위쪽 끝이면 아래쪽으로 뒤집는다.
+   * 이름표는 바깥쪽(왼쪽 펫은 왼쪽, 가운데는 위/아래)에 붙여 서로 겹치지 않게 한다.
+   */
+  private spreadAround(at: Point) {
+    const s = this.size;
+    const n = Math.min(this.pets.length, 3);
+    const vw = document.documentElement.clientWidth;
+    const R = s * 1.25 + 22; // 커서에서 펫 가운데까지
+    const LABEL_W = 116; // 이름표 최대 폭 + 여백
+    const HALF = 58; // 위/아래 이름표 폭의 절반
+    // 기본: 위쪽 부채꼴(왼쪽 위 · 위 · 오른쪽 위). 왼쪽/오른쪽 끝이면 반대쪽으로 벌어지는 4분의 1 부채꼴
+    const WIDE: Record<number, number[]> = { 1: [-90], 2: [-130, -50], 3: [-150, -90, -30] };
+    const TOWARD_RIGHT: Record<number, number[]> = { 1: [-60], 2: [-80, -20], 3: [-90, -45, 0] };
+    const side = R * 0.87 + s * 0.6 + 8;
+    // 중심을 화면 안쪽으로 당겨 둔다: 끝에 있는 펫이 화면에 맞춰 밀리면서 이웃 펫과 겹치지 않게
+    at = { x: clamp(at.x, s * 0.6 + 4, vw - s * 0.6 - 4), y: clamp(at.y, s * 0.5 + 4, innerHeight - s * 0.5 - 4) };
+    let angles = WIDE[n] || [];
+    if (at.x < side) angles = TOWARD_RIGHT[n];
+    else if (at.x > vw - side) angles = TOWARD_RIGHT[n].map((a) => -180 - a).reverse();
+    const flip = at.y - R - s / 2 - 34 < 0; // 위쪽에 자리가 없으면 아래로
+    if (flip) angles = angles.map((a) => -a);
+    this.pets.forEach((pet, i) => {
+      const rad = ((angles[i] ?? -90) * Math.PI) / 180;
+      const cx = clamp(at.x + Math.cos(rad) * R, s * 0.6 + 4, vw - s * 0.6 - 4);
+      const cy = clamp(at.y + Math.sin(rad) * R, s * 0.5 + 4, innerHeight - s * 0.5 - 4);
+      pet.slot = { x: cx, y: cy + s / 2 }; // pet.x·y 는 발밑 기준
+      const c = Math.cos(rad);
+      let where: Side = flip ? "down" : "up";
+      if (c < -0.5 && cx - s * 0.6 - LABEL_W > 0) where = "left";
+      else if (c > 0.5 && cx + s * 0.6 + LABEL_W < vw) where = "right";
+      for (const k of SIDES) pet.el.classList.toggle("side-" + k, k === where);
+      // 위/아래 이름표가 화면 끝에 걸리면 펫 가장자리에 맞춰 한쪽으로 붙인다
+      const vertical = where === "up" || where === "down";
+      pet.el.classList.toggle("al-start", vertical && cx - HALF < 0);
+      pet.el.classList.toggle("al-end", vertical && cx + HALF > vw);
+    });
+  }
+
+  private targetFor(pet: Pet, w: number): Point & { hold?: boolean; k?: number } {
     const s = this.size;
     const mouse = this.mouse!;
-    // 메뉴 키를 누르고 있는 동안은 제자리에 멈춘다(클릭할 수 있게)
-    if (this.armed) return { x: pet.x, y: pet.y, hold: true };
+    // 메뉴 키를 누르고 있는 동안은 커서 둘레의 제 자리로 빠르게 모인다(클릭할 수 있게). 마우스를 움직여도 자리는 그대로
+    if (this.armed) return pet.slot ? { x: pet.slot.x, y: pet.slot.y, k: 260 } : { x: pet.x, y: pet.y, hold: true };
     // 마우스가 천천히 다가오거나 바로 위에 오면 도망가지 않고 그 자리에 멈춘다.
     // 빠르게 지나가는 건 이동으로 보고 그냥 따라간다. 충분히 멀어지면 다시 따라간다.
     const dx = pet.x - mouse.x;
@@ -258,6 +303,7 @@ export class Crew implements ActionHost {
 
   private arm() {
     this.armed = true;
+    if (this.mouse) this.spreadAround(this.mouse);
     this.root.classList.add("armed");
     this.dismissHint();
   }
@@ -265,6 +311,12 @@ export class Crew implements ActionHost {
     if (!this.armed) return;
     this.armed = false;
     this.root.classList.remove("armed");
+    for (const pet of this.pets) {
+      pet.slot = undefined;
+      pet.held = true; // 키를 떼면 그 자리에서 잠깐 쉬다가, 마우스가 멀어지면 다시 따라간다
+      for (const k of SIDES) pet.el.classList.remove("side-" + k);
+      pet.el.classList.remove("al-start", "al-end");
+    }
     if (this.hot) {
       this.hot.el.classList.remove("hot");
       this.hot = null;
@@ -367,8 +419,8 @@ export class Crew implements ActionHost {
     const idle = still > 900 && !this.armed;
     for (const pet of this.pets) {
       const tg = this.targetFor(pet, w);
-      const k = tg.hold ? 0 : pet.k;
-      const c = tg.hold ? 18 : 2 * Math.sqrt(k) * 0.8; // 멈출 땐 브레이크만
+      const k = tg.hold ? 0 : (tg.k ?? pet.k);
+      const c = tg.hold ? 18 : 2 * Math.sqrt(k) * (tg.k ? 1 : 0.8); // 멈출 땐 브레이크만, 자리로 모일 땐 튕기지 않게
       let ax = (tg.x - pet.x) * k - pet.vx * c;
       let ay = (tg.y - pet.y) * k - pet.vy * c;
       // 서로 겹치지 않게 밀어낸다(멈춰 있는 펫끼리도)

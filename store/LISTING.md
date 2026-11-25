@@ -22,7 +22,7 @@
 
 ■ 이렇게 써요
 • 마우스를 움직이면 펫이 따라와요. 평소에는 클릭이 펫을 통과해서 페이지 사용을 방해하지 않아요.
-• Alt를 누르고 있으면 펫이 멈추고 각 펫이 하는 일이 보여요. 그 상태로 펫을 클릭하면 실행돼요.
+• Alt를 누르고 있으면 펫들이 커서 둘레로 겹치지 않게 모이고, 각 펫이 하는 일이 보여요. 그 상태로 펫을 클릭하면 실행돼요.
 • Alt를 그냥 떼면 아무 일도 일어나지 않아요.
 • 켜기/끄기: Alt+Shift+C 또는 툴바 아이콘 → 설정 창 맨 위 스위치
 
@@ -50,7 +50,7 @@ Each pet holds one shortcut: hold Alt and click a pet to run it.
 
 ■ How it works
 • Move your mouse and the pets follow. Normally clicks pass straight through them, so they never get in your way.
-• Hold Alt and the pets stop and show what each one does. Click a pet while holding Alt to run it.
+• Hold Alt and the pets fan out around your cursor, never overlapping, and show what each one does. Click a pet while holding Alt to run it.
 • Just letting go of Alt does nothing.
 • On/off: Alt+Shift+C, or the toolbar icon → switch at the top of the settings window
 
@@ -146,7 +146,7 @@ The pets are drawn by a content script so they can follow the mouse on every pag
 ```
 No account or login needed.
 1. Open any normal web page (e.g. https://example.com) and move the mouse: a small slime follows the cursor.
-2. Hold Alt: the pets stop and show labels. While holding Alt, click a pet to run its action (default pets: GitHub link, YouTube link, page memo).
+2. Hold Alt: the pets gather around the cursor and show labels. While holding Alt, click a pet to run its action (default pets: GitHub link, YouTube link, page memo).
 3. Click the toolbar icon to open the settings window (pets, skins, menu key, language, theme, on/off switch).
 4. Alt+Shift+C toggles the extension on and off.
 ```

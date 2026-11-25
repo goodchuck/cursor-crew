@@ -78,7 +78,7 @@ const ko = {
   "opt.opacity": "평소 투명도",
 
   "opt.openMenu": "쓰는 법",
-  "opt.openMenuHelp": "평소에는 펫이 클릭을 가로채지 않아요(펫 위를 클릭해도 페이지가 눌려요). 이 키를 누르고 있으면 펫들이 멈추고 이름표가 떠요. 그대로 펫을 클릭하면 그 펫의 기능이 실행돼요. 키를 떼면 아무 일도 없이 원래대로 돌아가요.",
+  "opt.openMenuHelp": "평소에는 펫이 클릭을 가로채지 않아요(펫 위를 클릭해도 페이지가 눌려요). 이 키를 누르고 있으면 펫들이 커서 둘레로 겹치지 않게 모이고 이름표가 떠요. 그대로 펫을 클릭하면 그 펫의 기능이 실행돼요. 키를 떼면 아무 일도 없이 원래대로 돌아가요.",
   "opt.menuKey": "누르고 있을 키",
   "opt.keyAltShiftNote": "Alt+Shift (윈도우 입력 언어 전환과 겹칠 수 있어요)",
   "opt.hintAgain": "처음 안내 다시 보기",
@@ -184,7 +184,7 @@ const en: Dict = {
   "opt.opacity": "Opacity",
 
   "opt.openMenu": "How to use",
-  "opt.openMenuHelp": "Pets never catch your clicks (clicking on one clicks the page underneath). Hold this key and the pets stop and show name tags; click a pet to run its action. Releasing the key does nothing and puts everything back.",
+  "opt.openMenuHelp": "Pets never catch your clicks (clicking on one clicks the page underneath). Hold this key and the pets gather around your cursor without overlapping and show name tags; click a pet to run its action. Releasing the key does nothing and puts everything back.",
   "opt.menuKey": "Key to hold",
   "opt.keyAltShiftNote": "Alt+Shift (may clash with the Windows input language switch)",
   "opt.hintAgain": "Show the first-time tip again",

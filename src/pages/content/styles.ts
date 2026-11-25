@@ -28,6 +28,13 @@ export const CSS = `
 .label span:last-child{overflow:hidden;text-overflow:ellipsis}
 .label.above{top:calc(var(--s) * -1 - 26px)}
 .label.below{top:8px}
+/* 메뉴 키를 누르고 펫이 커서 둘레로 모였을 때: 이름표를 바깥쪽에 */
+.pet.side-up .label{top:calc(var(--s) * -1 - 26px)}
+.pet.side-down .label{top:8px}
+.pet.side-left .label{top:calc(var(--s) * -0.5 - 10px);left:calc(var(--s) * -0.55 - 6px);transform:translateX(-100%)}
+.pet.side-right .label{top:calc(var(--s) * -0.5 - 10px);left:calc(var(--s) * 0.55 + 6px);transform:none}
+.pet.al-start .label{left:calc(var(--s) * -0.55);transform:none}
+.pet.al-end .label{left:calc(var(--s) * 0.55);transform:translateX(-100%)}
 .ldot{width:7px;height:7px;border-radius:50%;flex:none}
 .root.armed:not(.dim):not(.hide) .label{opacity:1;visibility:visible;transition:opacity .12s .08s,visibility 0s .08s}
 .root.armed .pet.hot .label{background:var(--glow);color:#fff}
