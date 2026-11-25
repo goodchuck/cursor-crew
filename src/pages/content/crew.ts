@@ -345,21 +345,23 @@ export class Crew implements ActionHost {
 
   private onKeyDown(e: KeyboardEvent) {
     if (e.composedPath().includes(this.host)) return; // 메모장·입력창 안에서 치는 키
+    // 윈도우의 Alt+숫자 패드는 특수 문자 입력(Alt 코드, 예: Alt+0169 = ©)이라 건드리지 않는다
+    const altCode = e.altKey && e.code.startsWith("Numpad");
     // 펫 메뉴가 열려 있으면 숫자·Esc 는 메뉴가 받는다(페이지로 새지 않게)
-    if (this.panel?.onKey?.(e)) {
+    if (!altCode && this.panel?.onKey?.(e)) {
       e.preventDefault();
       e.stopPropagation();
       return;
     }
-    // 메뉴 키를 누른 채 0: 따라다니기 ↔ 한 줄 정렬 바꾸기(설정에 저장)
-    if (this.armed && (e.code === "Digit0" || e.code === "Numpad0")) {
+    // 메뉴 키를 누른 채 ` (숫자 1 왼쪽 키, 한 손으로 닿게): 따라다니기 ↔ 한 줄 정렬 바꾸기(설정에 저장). 0 도 같은 일
+    if (this.armed && (e.code === "Backquote" || e.code === "Digit0")) {
       e.preventDefault();
       e.stopPropagation();
       this.toggleFormation();
       return;
     }
     // 메뉴 키를 누른 채 1·2·3: 그 번호 펫을 바로 실행(조준 없이). 숫자 자리 키(code)로 봐서 Shift 가 섞여도 된다
-    const num = /^(?:Digit|Numpad)([1-9])$/.exec(e.code);
+    const num = /^Digit([1-9])$/.exec(e.code);
     if (this.armed && num && this.pets[+num[1] - 1]) {
       e.preventDefault();
       e.stopPropagation();
