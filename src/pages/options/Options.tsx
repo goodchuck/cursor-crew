@@ -5,6 +5,7 @@ import { CUSTOM_IMAGES, FORMATIONS, HINT_SEEN_KEY, reorderImages, saveImage, typ
 import { resolveLang, type MsgKey } from "@src/shared/i18n";
 import { IS_MAC, codeLabel, menuKeyLabel } from "@src/shared/platform";
 import { KeyRecorder } from "./components/KeyRecorder";
+import { BackupButtons } from "./components/BackupButtons";
 import { getSkin } from "@src/shared/skins";
 import { itemName } from "@src/pages/content/actions";
 import { useDocumentLang, useImages, useMemos, useSettings, useT, useThemeClass } from "./hooks";
@@ -298,6 +299,9 @@ export default function Options() {
                   {t("opt.welcomeOpen")}
                 </button>
               </Row>
+            </Section>
+            <Section title={t("opt.backup")} help={t("opt.backupHelp")}>
+              <BackupButtons t={t} />
             </Section>
             <Section title={t("opt.excluded")} help={t("opt.excludedHelp")}>
               <ExcludedSites value={s.excluded} onChange={(excluded) => update({ excluded })} />

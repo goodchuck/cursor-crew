@@ -22,6 +22,8 @@ Cursor Crew(이하 "확장")는 사용자의 개인정보를 수집하거나 외
 
 **클립보드:** "URL 복사" 기능을 사용자가 실행했을 때만 현재 페이지 주소를 클립보드에 씁니다. 클립보드를 읽지는 않습니다.
 
+**백업 파일:** 설정 창의 "파일로 내보내기"를 누르면 설정과 메모가 담긴 파일이 사용자의 컴퓨터에 내려받아집니다. 이 파일은 어디로도 전송되지 않으며, 사용자가 직접 고른 파일만 가져옵니다.
+
 **삭제:** 설정 창에서 메모를 지울 수 있습니다. 확장을 삭제하면 저장된 모든 데이터가 함께 삭제됩니다.
 
 **문의:** <!-- TODO(사용자): 연락처 이메일 또는 GitHub 이슈 주소 -->
@@ -45,6 +47,8 @@ Cursor Crew ("the extension") does not collect or transmit any personal data.
 - It does not download or run remote code.
 
 **Clipboard:** It writes the current page URL to the clipboard only when you run "Copy URL". It never reads the clipboard.
+
+**Backup file:** "Export to file" in the settings window downloads a file with your settings and memos to your own computer. It is never sent anywhere, and only a file you pick yourself is imported.
 
 **Deletion:** You can delete memos in the settings window. Removing the extension deletes all of its stored data.
 

@@ -36,6 +36,11 @@ function area(name: "sync" | "local") {
       write(all);
       emit(changes);
     },
+    async clear() {
+      const all = read();
+      write({});
+      emit(Object.fromEntries(Object.keys(all).map((k) => [k, { oldValue: all[k] }])));
+    },
     async remove(keys: string | string[]) {
       const all = read();
       const changes: Parameters<Listener>[0] = {};

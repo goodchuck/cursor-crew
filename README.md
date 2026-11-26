@@ -151,6 +151,22 @@ const ghost: Skin = {
 3. `src/shared/i18n.ts`의 ko·en 사전에 `action.weather`, `action.weatherDesc`(와 쓰는 문구)를 더합니다. 한쪽만 넣으면 타입 검사가 잡아 줍니다.
 4. 탭을 열거나 다른 크롬 API가 필요하면 `chrome.runtime.sendMessage`로 `src/pages/background/index.ts`에 맡깁니다.
 
+## 저장 데이터 버전 · 마이그레이션 · 백업
+
+저장 모양이 바뀌어도 예전 사용자의 설정·메모가 깨지지 않게 버전을 붙여 둡니다(`src/shared/migrate.ts`).
+
+- `chrome.storage.sync`의 `schemaVersion`이 지금 데이터 모양의 버전입니다(없으면 0). 현재 `SCHEMA_VERSION = 1`.
+- 확장 **설치·업데이트·브라우저 시작** 때(background), 그리고 설정을 처음 읽을 때(`loadSettings`) 버전을 확인해서 낮으면 `MIGRATIONS`를 차례로 돌립니다. 이미 최신이면 버전 키 하나만 읽고 끝납니다.
+- 고치기 직전 데이터는 `chrome.storage.local`의 `backup:beforeMigration`에 남습니다(이미지 제외).
+- 저장된 버전이 더 높으면(다른 컴퓨터의 새 버전이 저장해 동기화된 경우) 건드리지 않고, `loadSettings`가 모르는 값만 안전하게 걸러 읽습니다.
+- **설정 창 → 기타 → 백업**: 설정과 메모를 버전이 적힌 JSON 파일로 내보내고, 가져올 때는 예전 버전 파일도 지금 모양으로 올려서 저장합니다(설정은 통째로 바꾸고 메모는 합침). 더 새 버전 파일은 거절합니다.
+
+**데이터 모양을 바꿀 때**
+
+1. `SCHEMA_VERSION`을 1 올립니다.
+2. `MIGRATIONS` 끝에 `{ to: 새 버전, note, run(store) }`를 더합니다. `run`은 `store.sync`, `store.local`을 직접 고칩니다(키를 지우려면 `delete`). 같은 데이터에 두 번 돌려도 결과가 같게 씁니다.
+3. `settings.ts`의 `Settings`·`DEFAULTS`도 새 모양으로 바꿉니다.
+
 ## 다국어 · 다크모드 구조
 
 - **화면 글자**: 모두 `src/shared/i18n.ts`의 사전 한 곳에 있습니다(`ko`가 기준, `en`은 같은 키를 다 채워야 타입 검사 통과). 코드에서는 `t("opt.look")`처럼 키로만 씁니다.
@@ -164,6 +180,7 @@ const ghost: Skin = {
 | `manifest.config.ts` | MV3 manifest(crxjs). 권한은 `storage`, 모든 http(s) 페이지에 콘텐츠 스크립트 |
 | `vite.config.ts` | 빌드 설정(`dist/`), 설정 창 페이지 입력 |
 | `src/shared/settings.ts` | 설정 모양·기본값·저장 도우미 |
+| `src/shared/migrate.ts` | 저장 데이터 버전, 마이그레이션, 백업 파일 내보내기·가져오기 |
 | `src/shared/i18n.ts` | UI 문자열 사전(ko/en)과 `t()` |
 | `src/shared/theme.ts` | 다크모드 판단 |
 | `src/shared/skins.ts` | 겉모습(슬라임 도트 렌더러, 커서, 이미지) |

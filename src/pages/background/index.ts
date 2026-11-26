@@ -1,5 +1,6 @@
 // 아이콘 클릭 → 설정 창, 단축키 → 켜기·끄기, 꺼짐 배지, 콘텐츠 스크립트 대신 탭 열기.
 import { DEFAULTS, loadSettings } from "@src/shared/settings";
+import { migrateStorage } from "@src/shared/migrate";
 import { makeT, resolveLang } from "@src/shared/i18n";
 import { openDashboard } from "./open-dashboard";
 
@@ -19,6 +20,8 @@ async function toggle() {
 export const WELCOME_PATH = "src/pages/welcome/index.html";
 
 chrome.runtime.onInstalled.addListener(async (details) => {
+  // 업데이트면 예전 데이터를 지금 모양으로(고치기 전 모습은 backup:beforeMigration 에 남김)
+  await migrateStorage();
   // 처음 설치하면 기본값을 저장해 둔다(이미 있는 값은 유지)
   const cur = await chrome.storage.sync.get(null);
   const fill: Record<string, unknown> = {};
@@ -28,7 +31,11 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   // 처음 설치했을 때만 30초 사용법 페이지(업데이트 때는 열지 않음)
   if (details.reason === "install") void chrome.tabs.create({ url: chrome.runtime.getURL(WELCOME_PATH) });
 });
-chrome.runtime.onStartup.addListener(() => void updateBadge());
+chrome.runtime.onStartup.addListener(async () => {
+  // 다른 기기에서 예전 버전이 저장해 동기화된 데이터도 올린다
+  await migrateStorage();
+  void updateBadge();
+});
 
 chrome.action.onClicked.addListener(() => void openDashboard());
 chrome.commands.onCommand.addListener((cmd) => {

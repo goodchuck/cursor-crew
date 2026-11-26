@@ -1,4 +1,6 @@
 // background · content · options 가 함께 쓰는 설정 모양과 기본값.
+// 저장 모양을 바꿀 때는 migrate.ts 의 SCHEMA_VERSION · MIGRATIONS 도 함께 고친다.
+import { ensureMigrated } from "./migrate";
 
 export type ActionId = "link" | "memo" | "copy" | "copyMd" | "top" | "bottom" | "back" | "reload" | "dupTab";
 export type SkinId = "slime" | "cursor" | "image";
@@ -125,6 +127,9 @@ export const IMAGE_KEYS = Array.from({ length: MAX_CREW }, (_, i) => "skinImage"
 const LEGACY_IMAGE_KEY = "skinImage";
 
 export async function loadSettings(): Promise<Settings> {
+  // 예전 버전이 저장한 데이터면 먼저 지금 모양으로 올린다(최신이면 버전 키 하나만 읽음)
+  await ensureMigrated();
+  // 아래는 마이그레이션과 별개로, 손상되었거나 다른 기기의 새 버전이 저장한 값에도 안전하게 읽기 위한 정리
   const got = (await chrome.storage.sync.get(DEFAULTS as unknown as Record<string, unknown>)) as unknown as Settings;
   const s = { ...DEFAULTS, ...got };
   // v0.6 이전의 "off"(키로 열지 않기)는 이제 없다: 펫을 쓰려면 키가 필요하므로 기본 키로
