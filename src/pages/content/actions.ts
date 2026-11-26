@@ -60,6 +60,8 @@ async function copyText(text: string): Promise<boolean> {
 }
 
 function open(url: string, mods: Mods, host: ActionHost, at: Point, toast: string) {
+  // 환영 페이지에서 연습할 때는 안내를 놓치지 않게 항상 뒤쪽 탭으로
+  if (document.documentElement.dataset.crewWelcome === "1") mods = { ctrlKey: true };
   chrome.runtime.sendMessage({ type: "crew:open", url, sameTab: !!mods.shiftKey, background: !!(mods.ctrlKey || mods.metaKey) }, (res) => {
     if (chrome.runtime.lastError || !res || !res.ok) host.toast(at, host.t("toast.cantOpen"));
   });

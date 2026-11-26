@@ -16,7 +16,7 @@ export default defineConfig(({ mode }) => ({
     sourcemap: mode === "development",
     rollupOptions: {
       // 설정 창은 manifest 에 없는 페이지라(아이콘을 누르면 창으로 연다) 따로 입력에 넣는다
-      input: { options: resolve(__dirname, "src/pages/options/index.html") },
+      input: { options: resolve(__dirname, "src/pages/options/index.html"), welcome: resolve(__dirname, "src/pages/welcome/index.html") },
     },
   },
 }));

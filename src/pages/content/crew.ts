@@ -327,8 +327,15 @@ export class Crew implements ActionHost {
     return this.visible && !document.fullscreenElement && this.pets.length > 0;
   }
 
+  /** 환영 페이지(연습)에서만: 키를 눌렀는지·무엇을 실행했는지 알려 준다. 일반 페이지에는 아무것도 보내지 않는다 */
+  private emit(type: "arm" | "run" | "formation", detail: Record<string, unknown> = {}) {
+    if (document.documentElement.dataset.crewWelcome !== "1") return;
+    dispatchEvent(new CustomEvent("cursor-crew", { detail: { type, ...detail } }));
+  }
+
   private arm() {
     this.armed = true;
+    this.emit("arm");
     if (this.mouse) this.spreadAround(this.mouse);
     this.root.classList.add("armed");
     this.dismissHint();
@@ -411,6 +418,7 @@ export class Crew implements ActionHost {
   private toggleFormation() {
     const next: Formation = this.formation === "line" ? "free" : "line";
     this.setFormation(next);
+    this.emit("formation", { formation: next });
     const p = this.mouse || { x: 0, y: 0 };
     this.toast({ x: p.x, y: p.y - this.size * 2.4 }, this.t(next === "line" ? "toast.line" : "toast.free"));
     void chrome.storage.sync.set({ formation: next });
@@ -431,7 +439,9 @@ export class Crew implements ActionHost {
 
   private runTask(task: Task, mods: Mods, at: Point, ctx: RunCtx) {
     const fn = ACTIONS[task.action];
-    if (fn) void fn(task, mods, this, at, ctx);
+    if (!fn) return;
+    this.emit("run", { action: task.action });
+    void fn(task, mods, this, at, ctx);
   }
 
   private petTop(pet: Pet): Point {

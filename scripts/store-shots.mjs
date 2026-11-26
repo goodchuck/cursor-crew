@@ -24,7 +24,7 @@ await build({
   build: {
     outDir: out,
     emptyOutDir: true,
-    rollupOptions: { input: { scene: join(root, "test/store-scene.html"), options: join(root, "test/options.html") } },
+    rollupOptions: { input: { scene: join(root, "test/store-scene.html"), options: join(root, "test/options.html"), welcome: join(root, "test/welcome.html") } },
   },
 });
 

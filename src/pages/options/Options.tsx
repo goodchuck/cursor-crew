@@ -292,6 +292,13 @@ export default function Options() {
                 />
               </Row>
             </Section>
+            <Section title={t("guide.title")}>
+              <Row title={t("opt.welcomeRow")} help={t("opt.welcomeRowHelp")}>
+                <button type="button" className={btnCls} onClick={() => void chrome.runtime.sendMessage({ type: "crew:welcome" })}>
+                  {t("opt.welcomeOpen")}
+                </button>
+              </Row>
+            </Section>
             <Section title={t("opt.excluded")} help={t("opt.excludedHelp")}>
               <ExcludedSites value={s.excluded} onChange={(excluded) => update({ excluded })} />
             </Section>

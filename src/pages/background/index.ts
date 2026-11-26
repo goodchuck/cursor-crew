@@ -16,13 +16,17 @@ async function toggle() {
   await chrome.storage.sync.set({ enabled: !enabled });
 }
 
-chrome.runtime.onInstalled.addListener(async () => {
+export const WELCOME_PATH = "src/pages/welcome/index.html";
+
+chrome.runtime.onInstalled.addListener(async (details) => {
   // 처음 설치하면 기본값을 저장해 둔다(이미 있는 값은 유지)
   const cur = await chrome.storage.sync.get(null);
   const fill: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(DEFAULTS)) if (cur[k] === undefined) fill[k] = v;
   if (Object.keys(fill).length) await chrome.storage.sync.set(fill);
   void updateBadge();
+  // 처음 설치했을 때만 30초 사용법 페이지(업데이트 때는 열지 않음)
+  if (details.reason === "install") void chrome.tabs.create({ url: chrome.runtime.getURL(WELCOME_PATH) });
 });
 chrome.runtime.onStartup.addListener(() => void updateBadge());
 
@@ -47,7 +51,7 @@ function normalizeUrl(raw: unknown): string | null {
   }
 }
 
-type Msg = { type: "crew:open"; url: string; sameTab?: boolean; background?: boolean } | { type: "crew:options"; hash?: string } | { type: "crew:dup" };
+type Msg = { type: "crew:open"; url: string; sameTab?: boolean; background?: boolean } | { type: "crew:options"; hash?: string } | { type: "crew:dup" } | { type: "crew:welcome" };
 
 chrome.runtime.onMessage.addListener((msg: Msg, sender, reply) => {
   if (msg?.type === "crew:open") {
@@ -66,6 +70,7 @@ chrome.runtime.onMessage.addListener((msg: Msg, sender, reply) => {
     return true; // 비동기 응답
   }
   if (msg?.type === "crew:options") void openDashboard(msg.hash);
+  if (msg?.type === "crew:welcome") void chrome.tabs.create({ url: chrome.runtime.getURL(WELCOME_PATH) });
   // 탭 복제: 보낸 탭을 그대로 복제(tabs 권한 없이 됨)
   if (msg?.type === "crew:dup" && sender.tab?.id != null) void chrome.tabs.duplicate(sender.tab.id);
 });
