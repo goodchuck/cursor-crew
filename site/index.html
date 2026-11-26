@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cursor Crew — 일하는 도트 펫</title>
+    <meta name="title-ko" content="Cursor Crew — 일하는 도트 펫" />
+    <meta name="title-en" content="Cursor Crew — pixel pets that do things" />
+    <meta name="description" content="마우스를 따라다니는 작은 도트 펫. Alt를 누른 채 펫을 클릭하면 고른 글자 검색, 링크, 페이지 메모가 바로 실행되는 크롬 확장." />
+    <meta property="og:title" content="Cursor Crew" />
+    <meta property="og:description" content="Tiny pixel pets that follow your mouse — hold Alt and click one to search, open a link or leave a memo." />
+    <meta property="og:image" content="img/marquee-en.png" />
+    <link rel="icon" href="img/icon-32.png" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="crew" aria-hidden="true"></div>
+    <div class="wrap">
+      <header class="top">
+        <img src="img/icon-32.png" alt="" />
+        <b>Cursor Crew</b>
+        <nav>
+          <a href="privacy.html"><span data-lang="ko">개인정보처리방침</span><span data-lang="en">Privacy</span></a>
+          <span class="lang"><button type="button" data-set="ko">한국어</button> · <button type="button" data-set="en">English</button></span>
+        </nav>
+      </header>
+
+      <section class="hero">
+        <h1 data-lang="ko">귀엽기만 한 펫 말고,<br />일하는 펫.</h1>
+        <h1 data-lang="en">Not just cute pets.<br />Pets that do things.</h1>
+        <p data-lang="ko">작은 도트 펫들이 마우스를 따라다녀요. <kbd>Alt</kbd>를 누른 채 펫을 클릭하면 고른 글자 검색, 자주 가는 링크, 페이지 메모가 바로 실행돼요.</p>
+        <p data-lang="en">Tiny pixel pets follow your mouse. Hold <kbd>Alt</kbd> and click one to search the selected text, open a favorite link or leave a memo on the page.</p>
+        <!-- 스토어에 올린 뒤 href 를 스토어 주소로 바꾸고 aria-disabled 를 지운다 -->
+        <a class="cta" id="store" href="#" aria-disabled="true"><span data-lang="ko">크롬에 추가 (곧 출시)</span><span data-lang="en">Add to Chrome (coming soon)</span></a>
+        <div class="hint"><span data-lang="ko">마우스를 움직여 보세요 → 펫들이 따라와요</span><span data-lang="en">Move your mouse → the pets follow</span></div>
+      </section>
+
+      <section class="features">
+        <div>
+          <h3 data-lang="ko">클릭을 가로채지 않아요</h3>
+          <h3 data-lang="en">Never in your way</h3>
+          <p data-lang="ko">평소엔 클릭이 펫을 통과해요. 키를 누르고 있을 때만 펫이 모여서 눌려요.</p>
+          <p data-lang="en">Clicks go right through the pets. Only while you hold the key do they gather and become clickable.</p>
+        </div>
+        <div>
+          <h3 data-lang="ko">펫 하나에 기능 여러 개</h3>
+          <h3 data-lang="en">Several actions per pet</h3>
+          <p data-lang="ko">구글·유튜브·위키 검색, 링크 열기, 주소 복사, 맨 위로, 탭 복제… <kbd>Alt</kbd>+<kbd>1</kbd>·<kbd>2</kbd>·<kbd>3</kbd>으로 바로.</p>
+          <p data-lang="en">Search Google, YouTube or Wikipedia, open links, copy the URL, jump to top, duplicate a tab… or just press <kbd>Alt</kbd>+<kbd>1</kbd>/<kbd>2</kbd>/<kbd>3</kbd>.</p>
+        </div>
+        <div>
+          <h3 data-lang="ko">아무것도 보내지 않아요</h3>
+          <h3 data-lang="en">Nothing leaves your browser</h3>
+          <p data-lang="ko">서버도, 분석 도구도, 광고도 없어요. 설정과 메모는 내 브라우저에만 저장돼요.</p>
+          <p data-lang="en">No servers, analytics or ads. Your settings and memos stay in your browser.</p>
+        </div>
+      </section>
+
+      <section class="shots">
+        <img data-lang="ko" src="img/shot-2-ko.png" alt="Alt를 누르면 펫들이 커서 둘레로 모이고 이름표가 떠요" />
+        <img data-lang="en" src="img/shot-2-en.png" alt="Hold Alt and the pets gather around the cursor with name tags" />
+        <img data-lang="ko" src="img/shot-3-ko.png" alt="페이지 메모" />
+        <img data-lang="en" src="img/shot-3-en.png" alt="Page memo" />
+        <img data-lang="ko" src="img/shot-4-ko.png" alt="설정 창 라이트·다크" />
+        <img data-lang="en" src="img/shot-4-en.png" alt="Settings window, light and dark" />
+      </section>
+
+      <footer>
+        <span>© Cursor Crew</span>
+        <a href="privacy.html"><span data-lang="ko">개인정보처리방침</span><span data-lang="en">Privacy policy</span></a>
+      </footer>
+    </div>
+    <script src="site.js"></script>
+  </body>
+</html>
