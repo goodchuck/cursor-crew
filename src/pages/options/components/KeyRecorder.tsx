@@ -14,8 +14,8 @@ export function KeyRecorder({ value, onChange, prefix, t }: { value: string; onC
       e.stopPropagation();
       if (e.code === "Escape") return setListening(false);
       if (/^(Alt|Control|Shift|Meta|OS)/.test(e.code)) return; // 조합키만 누른 건 다음 키를 기다린다
-      // 1~9 는 펫 실행 키라 못 쓴다
-      if (!isUsableToggleCode(e.code) || /^Digit[1-9]$/.test(e.code)) return setBad(true);
+      // 1~9 는 펫 실행 키, H 는 이 사이트에서 숨기기라 못 쓴다
+      if (!isUsableToggleCode(e.code) || /^Digit[1-9]$/.test(e.code) || e.code === "KeyH") return setBad(true);
       setBad(false);
       setListening(false);
       onChange(e.code);

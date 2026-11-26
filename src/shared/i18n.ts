@@ -159,11 +159,14 @@ const ko = {
   "opt.langAuto": "자동",
 
   "opt.excluded": "끌 사이트",
-  "opt.excludedHelp": "한 줄에 하나씩, 도메인만 적어요(예: docs.google.com). 하위 도메인도 함께 꺼져요.",
+  "opt.excludedHelp": "한 줄에 하나씩, 도메인만 적어요(예: docs.google.com). 하위 도메인도 함께 꺼져요. 페이지에서 메뉴 키를 누른 채 H를 치면 바로 여기에 더해져요.",
 
   "opt.memos": "메모",
   "opt.memosEmpty": "아직 메모가 없어요. 페이지에서 키를 누른 채 메모 펫을 클릭해 보세요.",
   "opt.memoDelete": "삭제",
+  "hide.done": "{site}에서 펫을 숨겼어요",
+  "hide.undo": "되돌리기",
+  "guide.tipHide": "{key}+H: 이 사이트에서 숨기기",
   "opt.backup": "백업",
   "opt.backupHelp": "펫·단축키 설정과 메모를 파일 하나로 저장해요. 컴퓨터를 바꾸거나 다시 설치할 때 가져오면 그대로 돌아와요. 예전 버전 파일도 지금 버전에 맞춰 읽어요.",
   "opt.export": "파일로 내보내기",
@@ -381,11 +384,14 @@ const en: Dict = {
   "opt.langAuto": "Auto",
 
   "opt.excluded": "Turn off on these sites",
-  "opt.excludedHelp": "One domain per line (for example docs.google.com). Subdomains are included.",
+  "opt.excludedHelp": "One domain per line (for example docs.google.com). Subdomains are included. Hold the menu key and press H on a page to add it here.",
 
   "opt.memos": "Memos",
   "opt.memosEmpty": "No memos yet. On a page, hold the key and click the Memo pet.",
   "opt.memoDelete": "Delete",
+  "hide.done": "Pets hidden on {site}",
+  "hide.undo": "Undo",
+  "guide.tipHide": "{key}+H: hide on this site",
   "opt.backup": "Backup",
   "opt.backupHelp": "Save your pets, keys and memos to one file. Import it after switching computers or reinstalling to get everything back. Files from older versions are upgraded on import.",
   "opt.export": "Export to file",

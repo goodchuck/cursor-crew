@@ -25,6 +25,7 @@
 • Alt를 누르고 있으면 펫들이 커서 둘레로 겹치지 않게 모이고, 각 펫이 하는 일이 보여요. 그 상태로 펫을 클릭하면 실행돼요.
 • Alt를 누른 채 1·2·3을 치면 펫을 조준하지 않아도 돼요.
 • Alt를 누른 채 숫자 1 왼쪽 키(`)를 치면 펫들이 커서 옆에 한 줄로 정렬돼요(다시 치면 풀림). 이 키는 설정에서 바꿀 수 있어요.
+• Alt를 누른 채 H를 치면 이 사이트에서 펫을 바로 숨겨요(되돌리기 가능).
 • 맥에서는 Alt 대신 Option 키를 써요.
 • Alt를 그냥 떼면 아무 일도 일어나지 않아요.
 • 설치하면 30초 연습 페이지가 열려요. 따라 해 보면 바로 익숙해져요.
@@ -59,6 +60,7 @@ Each pet holds your shortcuts: hold Alt and click a pet to run it. Give a pet se
 • Hold Alt and the pets fan out around your cursor, never overlapping, and show what each one does. Click a pet while holding Alt to run it.
 • Hold Alt and press 1, 2 or 3 to skip aiming.
 • Hold Alt and press ` (left of 1) to line the pets up next to the cursor (again to undo). You can change this key in settings.
+• Hold Alt and press H to hide the pets on the current site (with undo).
 • On Mac, use Option instead of Alt.
 • Just letting go of Alt does nothing.
 • A 30-second practice page opens after install so you get the hang of it right away.

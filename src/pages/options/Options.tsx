@@ -183,6 +183,7 @@ export default function Options() {
               <ul className="m-0 mt-2.5 flex list-none flex-wrap gap-x-3 gap-y-1 p-0 text-xs text-zinc-500 dark:text-zinc-400">
                 {s.numberKeys && <li>· {t("guide.tipNum", { key: keyName })}</li>}
                 {s.lineKey && <li>· {t("guide.tipLine", { key: keyName, line: codeLabel(s.lineKey) })}</li>}
+                <li>· {t("guide.tipHide", { key: keyName })}</li>
                 <li>· {t("guide.tipFree")}</li>
               </ul>
             </section>

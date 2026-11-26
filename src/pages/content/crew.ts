@@ -68,6 +68,8 @@ export interface CrewOptions {
   t: T;
   lang: Lang;
   dark: boolean;
+  /** 메뉴 키 + H: 이 사이트에서 펫 숨기기(저장·되돌리기 안내는 index.ts 가 한다) */
+  onHideSite?: () => void;
 }
 
 /** 펫 옆에 뜨는 창: 메모장 · 기능 메뉴 · 검색어 입력. 한 번에 하나만 */
@@ -105,7 +107,10 @@ export class Crew implements ActionHost {
   private dead = false;
   private off: (() => void)[] = [];
 
-  constructor({ cfg, mouse, images, t, lang, dark }: CrewOptions) {
+  private onHideSite?: () => void;
+
+  constructor({ cfg, mouse, images, t, lang, dark, onHideSite }: CrewOptions) {
+    this.onHideSite = onHideSite;
     this.cfg = cfg;
     this.t = t;
     this.lang = lang;
@@ -382,6 +387,14 @@ export class Crew implements ActionHost {
       e.preventDefault();
       e.stopPropagation();
       this.toggleFormation();
+      return;
+    }
+    // 메뉴 키를 누른 채 H: 이 사이트에서 숨기기
+    if (this.armed && e.code === "KeyH" && this.onHideSite) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.disarm();
+      this.onHideSite();
       return;
     }
     // 메뉴 키를 누른 채 1·2·3: 그 번호 펫을 바로 실행(조준 없이). 숫자 자리 키(code)로 봐서 Shift 가 섞여도 된다

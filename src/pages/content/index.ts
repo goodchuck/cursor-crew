@@ -1,11 +1,12 @@
 // 콘텐츠 스크립트 진입점. 모든 페이지에 들어가므로 React 없이 가볍게(바닐라 TS + Shadow DOM).
 // 설정을 읽어 펫(Crew)을 띄우고, 설정·이미지·테마가 바뀌면 다시 만든다.
-import { loadImages, loadSettings, memoKey, isImageKey } from "@src/shared/settings";
+import { loadImages, loadSettings, memoKey, isImageKey, saveSettings } from "@src/shared/settings";
 import { makeT, resolveLang } from "@src/shared/i18n";
 import { isDark, onSystemThemeChange } from "@src/shared/theme";
 import { getSkin } from "@src/shared/skins";
 import { Crew } from "./crew";
 import type { Point } from "./actions";
+import { showUndoBar } from "./undo-bar";
 
 declare global {
   interface Window {
@@ -30,6 +31,21 @@ function start() {
     });
   };
 
+  /** 숨길 때 쓰는 이름: www. 는 떼서 m.·www. 같은 하위 도메인도 함께 숨긴다 */
+  const siteName = () => location.hostname.replace(/^www\./, "");
+
+  async function hideHere() {
+    const site = siteName();
+    if (!site) return;
+    const cfg = await loadSettings();
+    if (!cfg.excluded.includes(site)) await saveSettings({ excluded: [...cfg.excluded, site] });
+    const t = makeT(resolveLang(cfg.lang));
+    showUndoBar(t("hide.done", { site }), t("hide.undo"), isDark(cfg.theme), async () => {
+      const now = await loadSettings();
+      await saveSettings({ excluded: now.excluded.filter((x) => x !== site) });
+    });
+  }
+
   async function apply() {
     const cfg = await loadSettings();
     themePref = cfg.theme;
@@ -42,7 +58,7 @@ function start() {
     }
     if (!on) return;
     const lang = resolveLang(cfg.lang);
-    crew = new Crew({ cfg, mouse: lastMouse, images, t: makeT(lang), lang, dark: isDark(cfg.theme) });
+    crew = new Crew({ cfg, mouse: lastMouse, images, t: makeT(lang), lang, dark: isDark(cfg.theme), onHideSite: () => void hideHere() });
     if (lastMouse) void crew.maybeHint();
   }
 
