@@ -1,0 +1,25 @@
+{
+  "note": "저장 버전 0: 버전 번호를 붙이기 전(v0.8.0 이전) 데이터 예시. 예전에 있었던 모양을 일부러 섞어 둠. 손대지 마세요.",
+  "sync": {
+    "enabled": true,
+    "menuKey": "off",
+    "skin": "slime",
+    "size": 36,
+    "opacity": 0.9,
+    "theme": "system",
+    "lang": "auto",
+    "excluded": ["figma.com"],
+    "crew": [
+      { "name": "GitHub", "color": "#4A9DF8", "action": "link", "url": "https://github.com" },
+      { "name": "", "color": "#F26B5B", "action": "copy", "more": [{ "name": "", "action": "top" }, { "name": "", "action": "teleport" }] },
+      { "name": "", "color": "#5BD16A", "action": "memo" },
+      { "name": "x", "color": "#A259FF", "action": "teleport" },
+      { "name": "", "color": "#FFC700", "action": "top" }
+    ]
+  },
+  "local": {
+    "crewHintSeen": 1,
+    "skinImage": "data:image/png;base64,AAAA",
+    "memo:https://example.com/post": { "text": "옛 메모", "title": "Example", "url": "https://example.com/post", "updated": 1 }
+  }
+}

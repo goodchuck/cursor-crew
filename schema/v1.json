@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "firstAppVersion": "0.8.0",
+  "shape": {
+    "type": "object",
+    "fields": {
+      "enabled": {
+        "type": "boolean",
+        "optional": false
+      },
+      "menuKey": {
+        "type": "string",
+        "optional": false
+      },
+      "excluded": {
+        "type": "array",
+        "of": {
+          "type": "any"
+        },
+        "optional": false
+      },
+      "skin": {
+        "type": "string",
+        "optional": false
+      },
+      "size": {
+        "type": "number",
+        "optional": false
+      },
+      "opacity": {
+        "type": "number",
+        "optional": false
+      },
+      "imagePixelated": {
+        "type": "boolean",
+        "optional": false
+      },
+      "theme": {
+        "type": "string",
+        "optional": false
+      },
+      "lang": {
+        "type": "string",
+        "optional": false
+      },
+      "formation": {
+        "type": "string",
+        "optional": false
+      },
+      "lineKey": {
+        "type": "string",
+        "optional": false
+      },
+      "numberKeys": {
+        "type": "boolean",
+        "optional": false
+      },
+      "crew": {
+        "type": "array",
+        "of": {
+          "type": "object",
+          "fields": {
+            "name": {
+              "type": "string",
+              "optional": false
+            },
+            "color": {
+              "type": "string",
+              "optional": false
+            },
+            "action": {
+              "type": "string",
+              "optional": false
+            },
+            "url": {
+              "type": "string",
+              "optional": true
+            },
+            "more": {
+              "type": "array",
+              "of": {
+                "type": "object",
+                "fields": {
+                  "name": {
+                    "type": "string",
+                    "optional": false
+                  },
+                  "action": {
+                    "type": "string",
+                    "optional": false
+                  },
+                  "url": {
+                    "type": "string",
+                    "optional": true
+                  }
+                }
+              },
+              "optional": true
+            }
+          }
+        },
+        "optional": false
+      }
+    }
+  }
+}

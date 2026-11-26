@@ -1,0 +1,74 @@
+{
+  "note": "저장 버전 1(앱 0.8.0)의 기본 데이터. 손대지 마세요.",
+  "sync": {
+    "enabled": true,
+    "menuKey": "Alt",
+    "excluded": [],
+    "skin": "slime",
+    "size": 36,
+    "opacity": 0.9,
+    "imagePixelated": false,
+    "theme": "system",
+    "lang": "auto",
+    "formation": "free",
+    "lineKey": "Backquote",
+    "numberKeys": true,
+    "crew": [
+      {
+        "name": "",
+        "color": "#5AB8F0",
+        "action": "link",
+        "url": "https://www.google.com/search?q={sel}",
+        "more": [
+          {
+            "name": "",
+            "action": "link",
+            "url": "https://www.youtube.com/results?search_query={sel}"
+          },
+          {
+            "name": "",
+            "action": "link",
+            "url": "https://ko.wikipedia.org/w/index.php?search={sel}"
+          }
+        ]
+      },
+      {
+        "name": "",
+        "color": "#F2766B",
+        "action": "copy",
+        "more": [
+          {
+            "name": "",
+            "action": "copyMd"
+          },
+          {
+            "name": "",
+            "action": "top"
+          },
+          {
+            "name": "",
+            "action": "bottom"
+          },
+          {
+            "name": "",
+            "action": "dupTab"
+          }
+        ]
+      },
+      {
+        "name": "",
+        "color": "#5BD16A",
+        "action": "memo"
+      }
+    ],
+    "schemaVersion": 1
+  },
+  "local": {
+    "memo:https://example.com/post?": {
+      "text": "예시 메모",
+      "title": "Example",
+      "url": "https://example.com/post",
+      "updated": 1
+    }
+  }
+}
