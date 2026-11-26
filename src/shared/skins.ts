@@ -15,6 +15,10 @@ export interface SkinState {
   vy: number;
   speed: number;
   hover: boolean;
+  /** 오래 가만히 있어서 조는 중(눈 감고 천천히 숨쉬기) */
+  sleep?: boolean;
+  /** 폴짝 뛰는 중이면 0~1 진행도(높이는 crew 가 올려 준다), 아니면 0 */
+  hop?: number;
 }
 export interface SkinBody {
   el: HTMLElement | SVGElement;
@@ -152,7 +156,15 @@ const slime: Skin = {
         }
         let shape: Shape;
         let lift = 0;
-        if (moving) {
+        if (st.hop) {
+          // 폴짝: 웅크림 → 늘어나며 뜀 → 착지하며 눌림(높이는 crew 가 올려 줌)
+          shape = st.hop < 0.15 ? "squash" : st.hop < 0.8 ? "stretch" : "squash";
+        } else if (st.sleep) {
+          // 졸기: 아주 천천히 숨쉬기
+          phase += st.dt * 0.6;
+          shape = Math.floor(phase) % 2 ? "squash" : "rest";
+          look = 0;
+        } else if (moving) {
           // 통통: 눌림 → 늘어나며 뜀 → 공중 → 착지
           phase += st.dt * (st.hover ? 5 : 8);
           const f = Math.floor(phase) % 4;
@@ -163,7 +175,7 @@ const slime: Skin = {
           phase += st.dt * 1.5;
           shape = Math.floor(phase) % 2 ? "squash" : "rest";
         }
-        const blink = st.t < blinkUntil;
+        const blink = !!st.sleep || st.t < blinkUntil;
         const key = shape + look + blink;
         if (key !== last) {
           img.src = slimeFrame(color, shape, look, blink);

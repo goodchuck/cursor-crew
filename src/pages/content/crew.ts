@@ -48,7 +48,15 @@ interface Pet {
   held?: boolean;
   /** 메뉴 키를 누르고 있는 동안 설 자리(커서 둘레) */
   slot?: Point;
+  /** 폴짝 뛰기 시작한 시각(performance.now) */
+  hopAt?: number;
+  sleeping?: boolean;
 }
+
+/** 마우스가 이만큼 멈춰 있으면 펫이 존다 */
+const SLEEP_MS = 20_000;
+const HOP_MS = 420;
+const reduceMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 type Side = "up" | "down" | "left" | "right";
 const SIDES: Side[] = ["up", "down", "left", "right"];
@@ -159,13 +167,16 @@ export class Crew implements ActionHost {
     Object.assign(hit.style, { left: -s * 0.55 + "px", top: -s * 1.05 + "px", width: s * 1.1 + "px", height: s * 1.1 + "px" });
     const spark = h("div", { class: "spark", text: "✦" });
     Object.assign(spark.style, { left: s * 0.3 + "px", top: -s * 1.15 + "px" });
+    // 졸 때 머리 위로 떠오르는 z 두 개
+    const zz = [h("div", { class: "zz", text: "z" }), h("div", { class: "zz z2", text: "z" })];
+    for (const z of zz) Object.assign(z.style, { left: s * 0.25 + "px", top: -s * 1.2 + "px" });
     // 이름표: 메뉴 키를 누르고 있을 때만 보인다. 이웃 펫과 겹치지 않게 위·아래로 번갈아 둔다
     // 동그라미 안 숫자 = 키를 누른 채 칠 숫자. 기능이 여러 개면 이름 뒤에 ▾
     const dot = h("span", { class: "ldot", text: String(i + 1) });
     dot.style.background = color;
     const label = h("div", { class: "label " + (i % 2 ? "below" : "above") }, dot, h("span", { text: taskName(item, t) + (item.more?.length ? " ▾" : "") }));
     label.style.setProperty("--s", s + "px");
-    const el = h("div", { class: "pet" }, body.el as Node, hit, spark, label);
+    const el = h("div", { class: "pet" }, body.el as Node, hit, spark, ...zz, label);
     el.style.setProperty("--glow", color);
     el.style.setProperty("--sp", Math.round(s * 0.36) + "px");
     const pet: Pet = { item, el, body, hit, color, i, x: 0, y: 0, vx: 0, vy: 0, k: i ? 60 : 85 };
@@ -431,7 +442,13 @@ export class Crew implements ActionHost {
   }
 
   /** 펫 실행: 기능이 하나면 바로, 여러 개면 메뉴를 펼친다. 선택한 글자는 누른 순간 것으로 */
+  /** 기능을 실행한 펫이 한 번 폴짝(움직임 줄이기 설정이면 생략) */
+  private hop(pet: Pet, delay = 0) {
+    if (!reduceMotion()) pet.hopAt = performance.now() + delay;
+  }
+
   private run(pet: Pet, mods: Mods) {
+    this.hop(pet);
     const ctx: RunCtx = { sel: selectedText() };
     if (pet.item.more?.length) return this.openMenu(pet, ctx);
     this.runTask(pet.item, mods, this.petTop(pet), ctx);
@@ -508,7 +525,18 @@ export class Crew implements ActionHost {
     const w = clamp((Math.hypot(this.mv.x, this.mv.y) - 60) / 450, 0, 1);
     const s = this.size;
     const idle = still > 900 && !this.armed;
+    const sleepy = still > SLEEP_MS && !this.armed && !this.panel;
     for (const pet of this.pets) {
+      // 졸다가 깨면 한 마리씩 차례로 폴짝
+      if (pet.sleeping && !sleepy) this.hop(pet, pet.i * 90);
+      if (pet.sleeping !== sleepy) {
+        pet.sleeping = sleepy;
+        pet.el.classList.toggle("sleep", sleepy);
+      }
+      const hp = pet.hopAt != null ? (now - pet.hopAt) / HOP_MS : 1;
+      if (hp >= 1) pet.hopAt = undefined;
+      const hopping = hp > 0 && hp < 1;
+      const hopY = hopping ? -Math.sin(Math.PI * hp) * s * 0.45 : 0;
       const tg = this.targetFor(pet, w);
       const k = tg.hold ? 0 : (tg.k ?? pet.k);
       const c = tg.hold ? 18 : 2 * Math.sqrt(k) * (tg.k ? 1 : 0.8); // 멈출 땐 브레이크만, 자리로 모일 땐 튕기지 않게
@@ -529,9 +557,9 @@ export class Crew implements ActionHost {
       pet.vy += ay * dt;
       pet.x += pet.vx * dt;
       pet.y += pet.vy * dt;
-      pet.body.update({ t: now / 1000, dt, vx: pet.vx, vy: pet.vy, speed: Math.hypot(pet.vx, pet.vy), hover: this.hot === pet });
-      pet.el.classList.toggle("idle", idle);
-      pet.el.style.transform = `translate(${pet.x.toFixed(1)}px,${pet.y.toFixed(1)}px)`;
+      pet.body.update({ t: now / 1000, dt, vx: pet.vx, vy: pet.vy, speed: Math.hypot(pet.vx, pet.vy), hover: this.hot === pet, sleep: sleepy, hop: hopping ? hp : 0 });
+      pet.el.classList.toggle("idle", idle && !sleepy);
+      pet.el.style.transform = `translate(${pet.x.toFixed(1)}px,${(pet.y + hopY).toFixed(1)}px)`;
     }
     if (this.hint) {
       const p = this.pets[0];
@@ -638,6 +666,7 @@ export class Crew implements ActionHost {
       const task = tasks[i];
       if (!task) return;
       this.closePanel();
+      this.hop(pet);
       this.runTask(task, mods, at, ctx);
     };
     const rows = tasks.map((task, i) => {

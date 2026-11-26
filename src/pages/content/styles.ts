@@ -41,6 +41,12 @@ export const CSS = `
 .badge{position:absolute;width:7px;height:7px;border-radius:50%;background:#A259FF;box-shadow:0 0 0 1.5px var(--surface)}
 .spark{position:absolute;color:#fff;font:700 var(--sp,12px)/1 ${FONT};text-shadow:0 0 2px var(--glow),0 0 4px var(--glow);opacity:0;pointer-events:none}
 .pet.idle .spark{animation:twinkle 3.2s ease-in-out infinite}
+.pet.sleep .spark{animation:none}
+.zz{position:absolute;color:var(--glow);font:800 var(--sp,12px)/1 ${FONT};text-shadow:0 0 2px var(--surface),0 0 3px var(--surface);opacity:0;pointer-events:none}
+.pet.sleep .zz{animation:zz 2.6s ease-out infinite}
+.pet.sleep .zz.z2{animation-delay:1.3s}
+@keyframes zz{0%{opacity:0;transform:translate(0,0) scale(.6)}20%{opacity:1}100%{opacity:0;transform:translate(10px,-16px) scale(1.15)}}
+@media (prefers-reduced-motion:reduce){.pet.sleep .zz{animation:none;opacity:.8}}
 @keyframes twinkle{0%,70%,100%{opacity:0;transform:scale(.4)}80%{opacity:1;transform:scale(1)}90%{opacity:.2;transform:scale(.7)}}
 .bubble{position:absolute;transform:translate(-50%,-100%);max-width:260px;background:var(--tip);color:var(--tip-text);font:600 12.5px/1.4 ${FONT};
   padding:7px 10px;border-radius:10px;box-shadow:0 6px 18px var(--shadow);text-align:center;pointer-events:none}
