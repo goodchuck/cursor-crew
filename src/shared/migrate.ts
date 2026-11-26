@@ -11,6 +11,8 @@
  *   2. MIGRATIONS 맨 끝에 { to: 새 버전, note, run } 을 더한다. run 은 store.sync / store.local 을 직접 고친다
  *      (키를 지우려면 delete). 같은 데이터에 두 번 돌려도 결과가 같게(멱등) 쓴다.
  *   3. settings.ts 의 Settings · DEFAULTS 도 새 모양으로.
+ *   4. pnpm build 가 scripts/check-schema.mjs 로 검사하고 schema/v<버전>.json · schema/fixtures/v<버전>.json 을 만든다(커밋).
+ * 잊고 모양만 바꾸면 빌드가 실패한다(README "저장 데이터 버전" 참고).
  */
 import { ACTION_IDS, IMAGE_KEYS, MAX_CREW, MAX_MORE, MENU_KEYS } from "./settings";
 

@@ -38,8 +38,10 @@ pnpm build
 | 명령 | 하는 일 |
 | --- | --- |
 | `pnpm dev` | 파일을 고칠 때마다 `dist/`를 다시 빌드(감시 빌드). 크롬 `chrome://extensions`에서 카드의 ↻를 누르고 탭을 새로고침하면 반영 |
-| `pnpm build` | 타입 검사 후 `dist/`로 빌드 |
-| `pnpm zip` | `dist/`를 `cursor-crew-<버전>.zip`으로 묶기(웹 스토어 업로드용, Windows에서도 Node 로 동작) |
+| `pnpm build` | 저장 모양 검사 → 타입 검사 → `dist/`로 빌드 |
+| `pnpm zip` | 빌드한 뒤 `dist/`를 `cursor-crew-<버전>.zip`으로 묶기(웹 스토어 업로드용, Windows에서도 Node 로 동작) |
+| `pnpm release [patch\|minor\|major\|1.2.3]` | 새 버전 내기: 저장 모양 검사 → 버전 올리기 → `schema/history.json` 기록 → zip. 검사에 걸리면 버전을 올리지 않음 |
+| `pnpm check:schema` | 저장 모양 검사만([아래](#저장-데이터-버전--마이그레이션--백업)) |
 | `pnpm typecheck` | 타입 검사만 |
 | `pnpm harness` | 확장 없이 브라우저에서 미리보기: http://localhost:5181/harness.html (펫), http://localhost:5181/options.html (설정 창). `chrome.*`는 `test/chrome-shim.ts`가 흉내 내고 저장은 그 페이지의 localStorage 에 됩니다 |
 | `pnpm store:shots` | 웹 스토어용 스크린샷·프로모션 이미지를 `store/en/`, `store/ko/`에 다시 만들기(설치된 크롬을 headless로 사용) |
@@ -47,8 +49,8 @@ pnpm build
 
 ## 크롬 웹 스토어에 올리기
 
-1. `package.json`의 `version`을 올립니다(manifest 버전이 여기서 나옴).
-2. `pnpm build`를 한 뒤 `pnpm zip`을 실행하면 `cursor-crew-<버전>.zip`이 만들어집니다. 이 파일을 [개발자 대시보드](https://chrome.google.com/webstore/devconsole)에 올립니다.
+1. `pnpm release`(기능 추가면 `pnpm release minor`)를 실행합니다. 저장 데이터 검사를 통과해야 `package.json` 버전이 오르고(manifest 버전이 여기서 나옴) `cursor-crew-<버전>.zip`이 만들어집니다. 마지막에 남은 일(실제 크롬 확인 · 커밋 · 태그 · 업로드)을 알려 줍니다.
+2. zip 을 [개발자 대시보드](https://chrome.google.com/webstore/devconsole)에 올립니다.
 3. 등록정보, 권한 근거, 데이터 사용 답변, 심사용 테스트 안내 문구는 [`store/LISTING.md`](store/LISTING.md)에 있습니다.
 4. 개인정보처리방침 내용은 [`store/PRIVACY.md`](store/PRIVACY.md)에 있고, 공개 URL에 올려서 링크를 넣습니다.
 5. 이미지는 `store/en/`, `store/ko/`에 있습니다. UI가 바뀌면 `pnpm store:shots`로 다시 찍습니다.
@@ -166,6 +168,19 @@ const ghost: Skin = {
 1. `SCHEMA_VERSION`을 1 올립니다.
 2. `MIGRATIONS` 끝에 `{ to: 새 버전, note, run(store) }`를 더합니다. `run`은 `store.sync`, `store.local`을 직접 고칩니다(키를 지우려면 `delete`). 같은 데이터에 두 번 돌려도 결과가 같게 씁니다.
 3. `settings.ts`의 `Settings`·`DEFAULTS`도 새 모양으로 바꿉니다.
+4. `pnpm build`(또는 `pnpm release`)를 하면 검사가 새 버전의 스냅숏(`schema/v<버전>.json`)과 예시 데이터(`schema/fixtures/v<버전>.json`)를 만듭니다. 함께 커밋합니다.
+
+**잊어도 빌드가 막아 줍니다** (`scripts/check-schema.mjs`, `pnpm build`·`pnpm release`가 먼저 실행)
+
+| 바꾼 것 | 결과 |
+| --- | --- |
+| 최상위에 새 설정 키만 추가(예: `sleepAfter: 20`) | 통과. 기본값으로 채워지므로 마이그레이션 필요 없음, 스냅숏만 갱신 |
+| 키 이름 바꾸기 · 지우기 · 타입 바꾸기 · 펫 안쪽에 새 칸 | **빌드 실패**: "SCHEMA_VERSION 을 올리고 마이그레이션을 넣으세요" |
+| 버전만 올리고 마이그레이션을 안 넣음 | **빌드 실패**: MIGRATIONS 순서가 1…N 이 아님 |
+| 마이그레이션 뒤에도 예전 칸이 남음 | **빌드 실패**: `schema/fixtures`의 예전 버전 데이터(v0, v1, …)를 실제로 올려 보고 지금 모양과 비교 |
+| 두 번 돌리면 결과가 달라지는 마이그레이션 | **빌드 실패**: 멱등 검사 |
+
+검사에 실패하면 스냅숏·예시 파일은 쓰지 않습니다. `schema/history.json`에는 `pnpm release` 때마다 "앱 버전 ↔ 저장 버전"이 쌓입니다.
 
 ## 다국어 · 다크모드 구조
 
@@ -181,6 +196,8 @@ const ghost: Skin = {
 | `vite.config.ts` | 빌드 설정(`dist/`), 설정 창 페이지 입력 |
 | `src/shared/settings.ts` | 설정 모양·기본값·저장 도우미 |
 | `src/shared/migrate.ts` | 저장 데이터 버전, 마이그레이션, 백업 파일 내보내기·가져오기 |
+| `schema/` | 저장 버전별 모양 스냅숏(`v<버전>.json`), 버전별 예시 데이터(`fixtures/`), 릴리스 기록(`history.json`) |
+| `scripts/check-schema.mjs`, `scripts/release.mjs` | 저장 모양 검사, 새 버전 내기 |
 | `src/shared/i18n.ts` | UI 문자열 사전(ko/en)과 `t()` |
 | `src/shared/theme.ts` | 다크모드 판단 |
 | `src/shared/skins.ts` | 겉모습(슬라임 도트 렌더러, 커서, 이미지) |
