@@ -92,6 +92,9 @@ export async function checkSchema({ quiet = false } = {}) {
   const log = (...a) => quiet || console.log(...a);
   const errors = [];
   const notes = [];
+  // 파일 쓰기는 검사가 모두 통과했을 때만(실패했는데 새 스냅숏이 남아 다음 검사를 속이지 않게)
+  const pending = [];
+  const later = (p, v, note) => pending.push([p, v, note]);
 
   // TS 모듈을 그대로 불러온다(chrome.* 는 함수 안에서만 쓰여서 불러오기만 해서는 안 돈다)
   const vite = await createServer({ configFile: false, logLevel: "error", appType: "custom", optimizeDeps: { noDiscovery: true, entries: [] }, server: { middlewareMode: true, hmr: false }, resolve: { alias: { "@src": resolve(root, "src") } } });
@@ -121,11 +124,10 @@ export async function checkSchema({ quiet = false } = {}) {
       const d = diff(read(prev).shape, shape);
       notes.push(`저장 버전 ${N - 1} → ${N}: ${d.map((x) => `${x.kind} ${x.path}`).join(", ") || "모양 변화 없음"}`);
     }
-    write(snapPath, { schemaVersion: N, firstAppVersion: appVersion, shape });
+    later(snapPath, { schemaVersion: N, firstAppVersion: appVersion, shape }, `schema/v${N}.json 스냅숏을 새로 만들었어요(커밋해 주세요).`);
     // 이 버전의 예시 데이터: 다음 버전 마이그레이션이 이걸 제대로 올리는지 검사할 때 쓴다
     const fx = join(fixDir, `v${N}.json`);
-    if (!existsSync(fx)) write(fx, { note: `저장 버전 ${N}(앱 ${appVersion})의 기본 데이터. 손대지 마세요.`, sync: { ...DEFAULTS, [VERSION_KEY]: N }, local: { "memo:https://example.com/post?": { text: "예시 메모", title: "Example", url: "https://example.com/post", updated: 1 } } });
-    notes.push(`schema/v${N}.json 스냅숏과 schema/fixtures/v${N}.json 예시 데이터를 새로 만들었어요(커밋해 주세요).`);
+    if (!existsSync(fx)) later(fx, { note: `저장 버전 ${N}(앱 ${appVersion})의 기본 데이터. 손대지 마세요.`, sync: { ...DEFAULTS, [VERSION_KEY]: N }, local: { "memo:https://example.com/post?": { text: "예시 메모", title: "Example", url: "https://example.com/post", updated: 1 } } }, `schema/fixtures/v${N}.json 예시 데이터를 새로 만들었어요(커밋해 주세요).`);
   } else {
     const snap = read(snapPath);
     const d = diff(snap.shape, shape);
@@ -141,19 +143,19 @@ export async function checkSchema({ quiet = false } = {}) {
         ].join("\n"),
       );
     } else if (safe.length) {
-      write(snapPath, { ...snap, shape });
-      notes.push(`새 설정 키 ${safe.map((x) => x.path).join(", ")}: 기본값으로 채워져서 마이그레이션 없이 괜찮아요. 스냅숏을 갱신했어요.`);
+      later(snapPath, { ...snap, shape }, `새 설정 키 ${safe.map((x) => x.path).join(", ")}: 기본값으로 채워져서 마이그레이션 없이 괜찮아요. 스냅숏을 갱신했어요.`);
     }
   }
 
   // 3. 예시 데이터마다 마이그레이션 → 지금 모양 · 멱등
   const fixtures = existsSync(fixDir) ? readdirSync(fixDir).filter((f) => /^v\d+\.json$/.test(f)) : [];
+  for (const [p] of pending) if (p.startsWith(fixDir)) fixtures.push(p.slice(fixDir.length + 1));
   for (let v = 0; v <= N; v++) if (!fixtures.includes(`v${v}.json`)) errors.push(`schema/fixtures/v${v}.json 이 없어요(저장 버전 ${v} 데이터 예시).`);
   const syncShape = { ...shape, fields: { ...shape.fields, [VERSION_KEY]: { type: "number", optional: true } } };
   for (const f of fixtures) {
     const from = +f.slice(1, -5);
     if (from > N) continue;
-    const data = read(join(fixDir, f));
+    const data = pending.find(([p]) => p === join(fixDir, f))?.[1] ?? read(join(fixDir, f));
     const once = { sync: structuredClone(data.sync), local: structuredClone(data.local) };
     try {
       applyMigrations(once, from);
@@ -169,6 +171,12 @@ export async function checkSchema({ quiet = false } = {}) {
     if (once.sync[VERSION_KEY] !== N) errors.push(`${f}: 마이그레이션 뒤 schemaVersion 이 ${N} 이 아니에요.`);
   }
 
+  if (!errors.length)
+    for (const [p, v, note] of pending) {
+      write(p, v);
+      if (note) notes.push(note);
+    }
+  else if (pending.length) notes.push("검사에 실패해서 스냅숏·예시 파일은 쓰지 않았어요.");
   log(`저장 버전 ${N} · 마이그레이션 ${MIGRATIONS.length}개 · 예시 데이터 ${fixtures.length}개 검사`);
   for (const n of notes) log("  ✓ " + n);
   for (const e of errors) console.error("  ✗ " + e);
