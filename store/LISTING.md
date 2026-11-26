@@ -163,6 +163,10 @@ No account or login needed.
 2. Hold Alt: the pets gather around the cursor and show labels. While holding Alt, click a pet (or press 1/2/3). Default pets: 1 = search menu (Google, YouTube, Wikipedia; select text first or type in the box that appears), 2 = page tools menu (copy URL, copy as Markdown, top, bottom, duplicate tab), 3 = page memo.
 3. Click the toolbar icon to open the settings window (pets, skins, menu key, language, theme, on/off switch).
 4. Alt+Shift+C toggles the extension on and off.
+5. Hold Alt and press ` (backquote): the pets line up behind the cursor; press again to go back to free following.
+6. Hold Alt and press H: pets are hidden on the current site, with an Undo bar for 6 seconds.
+7. A welcome page with a short practice opens on first install.
+On macOS, use Option instead of Alt (Ctrl+click on a pet also works).
 ```
 
 ---
